@@ -18,6 +18,13 @@
 </div>
 
 <script>
+
+    function getRepoFromBox() {
+        userRepo = document.getElementById('repoBox').value;
+        newURL = window.location.href+'?Repo=' +userRepo
+        window.location.href= newURL
+    }
+
     function getJsonFromUrl(url) {
         if(!url) url = location.href;
         var question = url.indexOf("?");
@@ -130,14 +137,6 @@
         };
         console.log('Sending Rate Limit Request')
         req.send();
-    }
-
-    function getRepoFromBox() {
-        userRepo = document.getElementById('repoBox').value;
-        console.log('User Specified Repo: ' + userRepo)
-        GetRepoFiles(userRepo)
-        document.getElementById('loadBox').style.display = "none";
-        document.getElementById('content').style.display = "block";
     }
 
     function LoadFromParams() {
