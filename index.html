@@ -1,21 +1,82 @@
 <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script>var REPO = '';</script>
+    <script>var ThemeString = '';</script>
 </head>
 
-<div class="debugBox">
+<const myRepo=/>
+
+<div id="loadBox">
     <div>
-        Repo: <input id='repoURL' type=text style="width:500px"
-        value='michaeldowd2/Wikiart_tSNE'>
-        <button onclick="GetRepoFiles()">Load</button>
+        Repo: <input id='repoBox' type=text style="width:500px" value='michaeldowd2/Wikiart_tSNE'>
+        <button onclick="getRepoFromBox()">Load</button>
     </div>
-    <hr>
+</div>
+
+<div id="content">
     <div id="debugResultBox"> </div>
 </div>
 
 <script>
-    function GetRepoFiles(repo) {
-        repo = document.getElementById('repoURL').value
-        masterURL = 'https://api.github.com/repos/' + repo + '/branches/master'
+    function getJsonFromUrl(url) {
+        if(!url) url = location.href;
+        var question = url.indexOf("?");
+        var hash = url.indexOf("#");
+        if(hash==-1 && question==-1) return {};
+        if(hash==-1) hash = url.length;
+        var query = question==-1 || hash==question+1 ? url.substring(hash) : 
+        url.substring(question+1,hash);
+        var result = {};
+        query.split("&").forEach(function(part) {
+          if(!part) return;
+          part = part.split("+").join(" "); // replace every + with space, regexp-free version
+          var eq = part.indexOf("=");
+          var key = eq>-1 ? part.substr(0,eq) : part;
+          var val = eq>-1 ? decodeURIComponent(part.substr(eq+1)) : "";
+          var from = key.indexOf("[");
+          if(from==-1) result[decodeURIComponent(key)] = val;
+          else {
+                var to = key.indexOf("]",from);
+                var index = decodeURIComponent(key.substring(from+1,to));
+                key = decodeURIComponent(key.substring(0,from));
+                if(!result[key]) result[key] = [];
+                if(!index) result[key].push(val);
+                else result[key][index] = val;
+            }
+        });
+        return result['Repo'];
+    }
+
+    function BuildItemList(treeObject, Directory, Repo) {
+        newArray = []
+        document.getElementById('debugResultBox').innerHTML += '<h3>Repo Wrapper: '+ Repo +'</h3><ul>'
+        treeObject.forEach(function(item,index) {
+            //is it an image
+            if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.JPG') || item["path"].toUpperCase().includes('.PNG'))) {
+                title = item["path"]
+                repoPath = Directory + '/' + item["path"]
+                URL = 'https://raw.githubusercontent.com/' + Repo + '/master/'+repoPath
+                item = {Type: "Image", Title:title, Subtitle:'', Directory: Directory, URL: URL }
+                newArray.push(item)
+
+                document.getElementById('debugResultBox').innerHTML += '<li>'+item["Type"]+': ' +item["Title"]+ ', URL: '+item["URL"]+'</li>'
+            }
+            if (item["type"]=='tree'){
+                title = item["path"]
+                repoPath = Directory + '/' + item["path"]
+                URL = item['url']
+                item = {Type: "Folder", Title:title, Subtitle:'', Directory: Directory, URL: URL }
+                newArray.push(item)
+
+                document.getElementById('debugResultBox').innerHTML += '<li>'+item["Type"]+': ' +item["Title"]+', API URL: '+item["URL"]+'</li>'
+            }
+        })
+        document.getElementById('debugResultBox').innerHTML += '</ul>'
+        return newArray
+    }
+
+    function GetRepoFiles(Repo) {
+        masterURL = 'https://api.github.com/repos/' + Repo + '/branches/master'
         var lastCommitReq = new XMLHttpRequest();
         lastCommitReq.open("GET", masterURL, true);
         lastCommitReq.responseType = "json";
@@ -33,7 +94,7 @@
                 console.log('received json for tree')
                 treeObject = obj["tree"]
                 console.log(treeObject)
-                itemList = BuildItemList(treeObject,'',repo)
+                itemList = BuildItemList(treeObject,'',Repo)
                 console.log('item list')
                 console.log(itemList)
             };
@@ -71,37 +132,36 @@
         req.send();
     }
 
-    function BuildItemList(treeObject, Directory, Repo) {
-        newArray = []
-        document.getElementById('debugResultBox').innerHTML += '<h3>Repo Wrapper: '+ Repo +'</h3><ul>'
-        treeObject.forEach(function(item,index) {
-            //is it an image
-            if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.JPG') || item["path"].toUpperCase().includes('.PNG'))) {
-                title = item["path"]
-                repoPath = Directory + '/' + item["path"]
-                URL = 'https://raw.githubusercontent.com/' + Repo + '/master/'+repoPath
-                item = {Type: "Image", Title:title, Subtitle:'', Directory: Directory, URL: URL }
-                newArray.push(item)
+    function getRepoFromBox() {
+        userRepo = document.getElementById('repoBox').value;
+        console.log('User Specified Repo: ' + userRepo)
+        GetRepoFiles(userRepo)
+        document.getElementById('loadBox').style.display = "none";
+        document.getElementById('content').style.display = "block";
+    }
 
-                document.getElementById('debugResultBox').innerHTML += '<li>'+item["Type"]+': ' +item["Title"]+ ', URL: '+item["URL"]+'</li>'
-            }
-            if (item["type"]=='tree'){
-                title = item["path"]
-                repoPath = Directory + '/' + item["path"]
-                URL = item['url']
-                item = {Type: "Folder", Title:title, Subtitle:'', Directory: Directory, URL: URL }
-                newArray.push(item)
-
-                document.getElementById('debugResultBox').innerHTML += '<li>'+item["Type"]+': ' +item["Title"]+', API URL: '+item["URL"]+'</li>'
-            }
-        })
-        document.getElementById('debugResultBox').innerHTML += '</ul>'
-        return newArray
+    function LoadFromParams() {
+        urlRepo = getJsonFromUrl()
+        console.log('url repo')
+        console.log(urlRepo)
+        if (REPO !== '') {
+            console.log('Repo: ' + REPO)
+            document.getElementById('loadBox').style.display = "none";
+            GetRepoFiles(REPO)
+        }
+        else if (!jQuery.isEmptyObject(urlRepo)) {
+            console.log('URL Repo: ' + urlRepo)
+            document.getElementById('loadBox').style.display = "none";
+            GetRepoFiles(urlRepo)
+        }
+        else { //Showing the 
+            console.log('No Repo specified: loading generator')
+            document.getElementById('content').style.display = "none";
+        }
     }
 
     window.onload = function() {
-        GetRepoFiles()
-        GetFolderContents('https://api.github.com/repos/michaeldowd2/Wikiart_tSNE/git/trees/090eed72ef156494eede0d00ca3f62da010eb330')
+        LoadFromParams()
         ShowRateLimit()
     }
 
