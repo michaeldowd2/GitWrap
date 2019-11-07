@@ -1,0 +1,24 @@
+<head>
+    <link rel = "stylesheet" type = "text/css" href = "Website/style.css" />
+    <script src="Website/websuits.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+</head>
+
+<div class="debugBox">
+    <div>
+        Repo: <input id='repoURL' type=text style="width:500px"
+        value='michaeldowd2/Wikiart_tSNE'>
+        <button onclick="GetRepoFiles()">Load</button>
+    </div>
+    <hr>
+    <div id="debugResultBox"> </div>
+</div>
+
+<script>
+    window.onload = function() {
+        GetRepoFiles()
+        GetFolderContents('https://api.github.com/repos/michaeldowd2/Wikiart_tSNE/git/trees/090eed72ef156494eede0d00ca3f62da010eb330')
+        ShowRateLimit()
+    }
+</script>
+
