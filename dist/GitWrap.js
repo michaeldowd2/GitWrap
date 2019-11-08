@@ -1,3 +1,10 @@
+var SiteTree = {};
+var JustRepo = '';
+var TopPath = '';
+var CurrentPath = '';
+
+
+
 function getRepoFromBox() {
     userRepo = document.getElementById('repoBox').value;
     newURL = window.location.href+'?Repo=' +userRepo
@@ -30,63 +37,91 @@ function getJsonFromUrl(url) {
             else result[key][index] = val;
         }
     });
+    if (!jQuery.isEmptyObject(result.Repo)) {REPO=result.Repo;}
+    if (!jQuery.isEmptyObject(result.Path)) {CurrentPath=result.Path;}
+    else {CurrentPath='';}
+    console.log('Repo from URL: ' + REPO)
+    console.log('Current Path from URL: ' + CurrentPath)
     return result['Repo'];
 }
 
-function BuildItemList(treeObject, Directory, Repo) {
-    newArray = []
-    treeObject.forEach(function(item,index) {
-        //is it an image
-        if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.JPG') || item["path"].toUpperCase().includes('.PNG'))) {
-            title = item["path"]
-            repoPath = Directory + '/' + item["path"]
-            URL = 'https://raw.githubusercontent.com/' + Repo + '/master'+repoPath
-            item = {Type: "Image", Title:title, Subtitle:'', Directory: repoPath, URL: URL }
-            newArray.push(item)
-         }
-        if (item["type"]=='tree'){
-            title = item["path"]
-            repoPath = Directory + '/' + item["path"]
-            URL = item['url']
-            item = {Type: "Folder", Title:title, Subtitle:'', Directory: repoPath, URL: URL }
-            newArray.push(item)
-
+function BuildSiteTree(TreeObject) {
+    TreeObject.forEach(function(item,index) {
+        if (TopPath ==='' || item.path.indexOf(TopPath===0)){
+            //is it an image
+            if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.JPG') || item["path"].toUpperCase().includes('.PNG'))) {
+                title = item.path.substring(item.path.lastIndexOf('/'))
+                URL = 'https://raw.githubusercontent.com/' + JustRepo + '/master/'+item.path
+                newItem = {Type: "Image", Title:title, Subtitle:'', Path: item.path, URL: URL }
+                SiteTree[item.path]=newItem
+             }
+            if (item["type"]=='tree'){
+                title = item.path.substring(item.path.lastIndexOf('/'))
+                URL = item['url']
+                newItem = {Type: "Folder", Title:title, Subtitle:'', Path:item.path+'/', URL: URL }
+                SiteTree[item.path]=newItem
+            }
         }
     })
-    return newArray
 }
 
-function AddFolder(Repo, Container, Item) {
-    console.log('adding folder')
-    Container.innerHTML += '<div class="itemBox" onclick=\'GetFolderContents("'+REPO+'","'+Item.Directory+'","'+Item.URL+'")\'>'+Item.Type+': ' +Item.Title+': '+Item.Directory+'</div>'
+function AddFolder(Container, Item) {
+    Container.innerHTML += '<div class="itemBox" onclick=\'LoadItemsFromPathLink("'+Item.Path+'")\'>'+Item.Type+': ' +Item.Title+'</div>'
 }
 
-function AddImage(Repo, Container, Item) {
-    console.log('adding image')
+function AddImage(Container, Item) {
     Container.innerHTML += '<img src="'+Item.URL+'" alt="'+Item.Title + '">'
 }
 
-function LoadItemsToPage(Repo, ItemList) {
-    console.log('Loading Items to Page')
-    console.log(ItemList)
+function LoadItemsFromPathLink(Path){
+    CurrentPath = Path;
+    LoadItemsToPage();
+}
+
+function LoadItemsToPage(Push=true,Replace=false) {
+    if (CurrentPath!==''){
+        newURL= window.location.href + '&Path='+CurrentPath
+        if (Push) {history.pushState('','',newURL)}
+        else if (Replace) {history.replaceState('','',newURL)}
+    }
+    
+    console.log('Loading Items to Page for Path: ' + CurrentPath)
+
     container = document.getElementById('content')
-    container.innerHTML = '<h1>'+Repo+'</h1>'
-    ItemList.forEach(function(item,index) {
-        if (item.Type==='Image'&&item.Title.includes('Summary')) {AddImage(Repo,container,item);}
-        else if (item["Type"]=='Folder') {AddFolder(Repo,container,item);}
+    container.innerHTML = ''
+
+    Object.keys(SiteTree).forEach(function(key) {
+        if ((CurrentPath==='' && key.indexOf('/')<0) //top level item
+        || (key.indexOf(CurrentPath)===0 && key.substring(CurrentPath.length).indexOf('/')<0)) {
+            item = SiteTree[key];
+            if (item.Type==='Image'&&item.Title.includes('Summary')) {AddImage(container,item);}
+            else if (item["Type"]=='Folder') {AddFolder(container,item);}
+        }
     })
 }
 
 function GetRepoFiles(Repo) {
-    masterURL = 'https://api.github.com/repos/' + Repo + '/branches/master'
+    JustRepo = Repo
+    repoArray = Repo.split('/')
+    if ((repoArray.length - 1) >2 ) { //Contains a path also
+        JustRepo = repoArray[0]+'/' +repoArray[1]
+        for (i = 2; i < repoArray.length; i++) {
+            TopPath += repoArray[i] + "<br>";
+        }
+    }
+    console.log('JustRepo: '+JustRepo)
+    console.log('TopPath: ' + TopPath)
+
+    masterURL = 'https://api.github.com/repos/' + JustRepo + '/branches/master'
+
     var lastCommitReq = new XMLHttpRequest();
     lastCommitReq.open("GET", masterURL, true);
     lastCommitReq.responseType = "json";
     lastCommitReq.onload = function(oEvent) {
         var obj = lastCommitReq.response;
-        console.log('received json for last commit')
-        treeURL=obj["commit"]["commit"]["tree"]["url"]
-        console.log(treeURL)
+        //console.log('received json for last commit')
+        treeURL=obj["commit"]["commit"]["tree"]["url"] + '?recursive=1'
+        //console.log(treeURL)
 
         var fileTreeReq = new XMLHttpRequest();
         fileTreeReq.open("GET", treeURL, true);
@@ -95,9 +130,11 @@ function GetRepoFiles(Repo) {
             var obj = fileTreeReq.response;
             console.log('received json for tree')
             treeObject = obj["tree"]
-            console.log(treeObject)
-            itemList = BuildItemList(treeObject,'',Repo)
-            LoadItemsToPage(Repo,itemList)
+            //console.log(treeObject)
+            BuildSiteTree(treeObject)
+            console.log('SiteTree')
+            console.log(SiteTree)
+            LoadItemsToPage(Push=false, Replace=true)
             return;
         };
         console.log('Sending Request for file list to: ' + masterURL)
@@ -136,15 +173,27 @@ function ShowRateLimit() {
     req.send();
 }
 
+function LoadPageTemplate() {
+    document.getElementsByClassName('navBar').innerHTML='<h1>'+REPO+'</h1>'
+}
+
 function LoadFromParams() {
-    urlRepo = getJsonFromUrl()
-    if (!jQuery.isEmptyObject(urlRepo)) {REPO=urlRepo;}
+    getJsonFromUrl()
     if (REPO!=='') {
         console.log('Repo: ' + REPO)
         document.getElementById('loadBox').style.display = "none";
+        LoadPageTemplate()
         GetRepoFiles(REPO)
     }
     else { //Showing the site generator
         document.getElementById('content').style.display = "none";
     }
 }
+
+window.onpopstate = function (event) {
+    console.log('popping, calling loadfromparams for')
+    console.log(window.location.href)
+    getJsonFromUrl()
+    LoadItemsToPage(Push=false,Replace=false)
+
+};
