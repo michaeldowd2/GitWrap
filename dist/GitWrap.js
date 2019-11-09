@@ -3,8 +3,6 @@ var JustRepo = '';
 var TopPath = '';
 var CurrentPath = '';
 
-
-
 function getRepoFromBox() {
     userRepo = document.getElementById('repoBox').value;
     newURL = window.location.href+'?Repo=' +userRepo
@@ -45,6 +43,31 @@ function getJsonFromUrl(url) {
     return result['Repo'];
 }
 
+function ParseTargetFromTitle(Title) {
+    ind = Title.indexOf('[Target=')
+    if (ind>=0) {
+        part = Title.substring(ind)
+        end = part.indexOf(']')
+        if (end>0) {
+            target=part.substring(0,end).toUpperCase()
+            if (target=== 'GALLERY'
+            || target === 'LINKS'
+            || target === 'HTML') {return target;}
+        }
+    }
+    return null;
+}
+
+function ParseTitleAndSubtitle(Title, Item) {
+    part = Title;
+    ind = Title.indexOf('[')
+    if (ind>0) { part = part.subString(0,ind);}
+    parts = part.split('_')
+    Item["Title"] = parts[0]
+    if (parts.length>1) Item["Subtitle"] = parts[1]
+    return Item;
+}
+
 function BuildSiteTree(TreeObject) {
     TreeObject.forEach(function(item,index) {
         if (TopPath ==='' || item.path.indexOf(TopPath===0)){
@@ -52,13 +75,26 @@ function BuildSiteTree(TreeObject) {
             if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.JPG') || item["path"].toUpperCase().includes('.PNG'))) {
                 title = item.path.substring(item.path.lastIndexOf('/'))
                 URL = 'https://raw.githubusercontent.com/' + JustRepo + '/master/'+item.path
+                target = ParseTargetFromTitle(title);
+                if (target===null) {target='GALLERY';}
                 newItem = {Type: "Image", Title:title, Subtitle:'', Path: item.path, URL: URL }
                 SiteTree[item.path]=newItem
-             }
-            if (item["type"]=='tree'){
+            }
+            else if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.MP3'))) {
                 title = item.path.substring(item.path.lastIndexOf('/'))
+                target = ParseTargetFromTitle(title);
+                if (target===null) {target='GALLERY';}
+                URL = 'https://raw.githubusercontent.com/' + JustRepo + '/master/'+item.path
+                newItem = {Type: "Audio", Title:title, Subtitle:'', Path: item.path, URL: URL }
+                SiteTree[item.path]=newItem
+            }
+            else if (item["type"]=='tree'){
+                title = item.path.substring(item.path.lastIndexOf('/'))
+                target = ParseTargetFromTitle(title);
+                if (target===null) {target='GALLERY';}
                 URL = item['url']
-                newItem = {Type: "Folder", Title:title, Subtitle:'', Path:item.path+'/', URL: URL }
+                newItem = {Type: "Folder", Path:item.path+'/', URL: URL }
+                newItem = ParseTitleAndSubtitle(title,newItem);
                 SiteTree[item.path]=newItem
             }
         }
@@ -66,16 +102,29 @@ function BuildSiteTree(TreeObject) {
 }
 
 function AddFolder(Container, Item) {
-    Container.innerHTML += '<div class="itemBox" onclick=\'LoadItemsFromPathLink("'+Item.Path+'")\'>'+Item.Type+': ' +Item.Title+'</div>'
+    Container.innerHTML += '<div class="grid-item col-lg-4 col-md-6 col-sm-12" onclick=\'LoadItemsFromPathLink("'+Item.Path+'")\'><div class="paletteColour1"><h1>'+Item.Title+'</h1><p class="font-weight-light">'+Item.Subtitle+'</p></div></div>'
 }
 
 function AddImage(Container, Item) {
-    Container.innerHTML += '<img src="'+Item.URL+'" alt="'+Item.Title + '">'
+    Container.innerHTML += '<div class="grid-item col-lg-4 col-md-6 col-sm-12"><img style="width:100%;height:100%"src="'+Item.URL+'" alt="'+Item.Title + '"></div>'
+}
+
+function AddAudio(Container, Item) {
+    console.log('adding audio: ') + URL
+    Container.innerHTML += '<div class="grid-item col-lg-4 col-md-6 col-sm-12">'+Item.Title+'<audio controls><source src="'+ Item.URL+'" type="audio/mpeg">Your browser does not support the audio element</audio></div>'
 }
 
 function LoadItemsFromPathLink(Path){
     CurrentPath = Path;
     LoadItemsToPage();
+}
+
+function RefreshMasonry() {
+    imagesLoaded( '.grid', function( instance ) {
+        var msnry = new Masonry( '.grid', {
+            itemSelector: '.grid-item'
+        });
+    });
 }
 
 function LoadItemsToPage(Push=true,Replace=false) {
@@ -85,19 +134,28 @@ function LoadItemsToPage(Push=true,Replace=false) {
         else if (Replace) {history.replaceState('','',newURL)}
     }
     
-    console.log('Loading Items to Page for Path: ' + CurrentPath)
-
-    container = document.getElementById('content')
-    container.innerHTML = ''
+    htmlRender = document.getElementsByClassName('htmlRender')[0]
+    htmlRender.innerHTML = ''
+    linkRender = document.getElementsByClassName('linkRender')[0]
+    linkRender.innerHTML = ''
+    galleryRender = document.getElementsByClassName('galleryRender')[0]
+    galleryRender.innerHTML = ''
 
     Object.keys(SiteTree).forEach(function(key) {
         if ((CurrentPath==='' && key.indexOf('/')<0) //top level item
         || (key.indexOf(CurrentPath)===0 && key.substring(CurrentPath.length).indexOf('/')<0)) {
             item = SiteTree[key];
-            if (item.Type==='Image'&&item.Title.includes('Summary')) {AddImage(container,item);}
-            else if (item["Type"]=='Folder') {AddFolder(container,item);}
+            targetContainer = galleryRender
+            if (item.Target==='HTML') {target = htmlRender;}
+            else if (item.Target==='LINKS') {target = linksRender;}
+            else if (item.Target==='GALLERY') {target = galleryRender;}
+
+            if (item.Type==='Image') {AddImage(targetContainer,item);}
+            else if (item["Type"]=='Folder') {AddFolder(targetContainer,item);}
+            else if (item["Type"]=='Audio') {AddAudio(targetContainer,item);}
         }
     })
+    RefreshMasonry()
 }
 
 function GetRepoFiles(Repo) {
@@ -109,8 +167,6 @@ function GetRepoFiles(Repo) {
             TopPath += repoArray[i] + "<br>";
         }
     }
-    console.log('JustRepo: '+JustRepo)
-    console.log('TopPath: ' + TopPath)
 
     masterURL = 'https://api.github.com/repos/' + JustRepo + '/branches/master'
 
@@ -119,10 +175,7 @@ function GetRepoFiles(Repo) {
     lastCommitReq.responseType = "json";
     lastCommitReq.onload = function(oEvent) {
         var obj = lastCommitReq.response;
-        //console.log('received json for last commit')
         treeURL=obj["commit"]["commit"]["tree"]["url"] + '?recursive=1'
-        //console.log(treeURL)
-
         var fileTreeReq = new XMLHttpRequest();
         fileTreeReq.open("GET", treeURL, true);
         fileTreeReq.responseType = "json";
@@ -130,18 +183,15 @@ function GetRepoFiles(Repo) {
             var obj = fileTreeReq.response;
             console.log('received json for tree')
             treeObject = obj["tree"]
-            //console.log(treeObject)
             BuildSiteTree(treeObject)
             console.log('SiteTree')
             console.log(SiteTree)
             LoadItemsToPage(Push=false, Replace=true)
             return;
         };
-        console.log('Sending Request for file list to: ' + masterURL)
         fileTreeReq.send();
     };
-console.log('Sending Request for last commit to: ' + masterURL)
-lastCommitReq.send();
+    lastCommitReq.send();
 };
 
 function GetFolderContents(Repo, Directory, target) {
@@ -165,7 +215,6 @@ function ShowRateLimit() {
     req.open("GET", 'https://api.github.com/rate_limit', true);
     req.responseType = "json";
     req.onload = function(oEvent) {
-        console.log('Rate Limit')
         var obj = req.response;
         console.log(obj)
     };
@@ -174,7 +223,11 @@ function ShowRateLimit() {
 }
 
 function LoadPageTemplate() {
-    document.getElementsByClassName('navBar').innerHTML='<h1>'+REPO+'</h1>'
+    console.log('loading brand')
+    title = REPO.substring(REPO.indexOf('/')+1)
+    titleEl = document.getElementsByClassName('navbar-brand')[0]
+    titleEl.innerHTML=title
+    titleEl.setAttribute('href',window.location.href)
 }
 
 function LoadFromParams() {
@@ -191,8 +244,6 @@ function LoadFromParams() {
 }
 
 window.onpopstate = function (event) {
-    console.log('popping, calling loadfromparams for')
-    console.log(window.location.href)
     getJsonFromUrl()
     LoadItemsToPage(Push=false,Replace=false)
 

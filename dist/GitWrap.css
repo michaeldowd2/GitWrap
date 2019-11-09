@@ -1,7 +1,12 @@
-.itemBox {
-    margin:12px;padding:12px;background-color:gray;color:white;cursor: pointer;
+
+.grid-item { 
+    float: left;
+    padding:12px;
+    background-color:transparent;
+    cursor: pointer;
 }
-
-.folderItem {
-
+.paletteColour1 {
+    padding:12px;
+    background-color:gray;
+    color:white;
 }
