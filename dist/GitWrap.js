@@ -46,13 +46,14 @@ function getJsonFromUrl(url) {
 function ParseTargetFromTitle(Title) {
     ind = Title.indexOf('[Target=')
     if (ind>=0) {
-        part = Title.substring(ind)
+        part = Title.substring(ind+8)
         end = part.indexOf(']')
         if (end>0) {
             target=part.substring(0,end).toUpperCase()
-            if (target=== 'GALLERY'
-            || target === 'LINKS'
-            || target === 'HTML') {return target;}
+            console.log('target: '+target)
+            if (target==='GALLERY' || target==='LINKS' || target==='PAGE' || target==='BANNER') {
+                return target;
+            }
         }
     }
     return null;
@@ -61,48 +62,93 @@ function ParseTargetFromTitle(Title) {
 function ParseTitleAndSubtitle(Title, Item) {
     part = Title;
     ind = Title.indexOf('[')
-    if (ind>0) { part = part.subString(0,ind);}
+    if (ind>0) { part = part.substring(0,ind);}
     parts = part.split('_')
-    Item["Title"] = parts[0]
-    if (parts.length>1) Item["Subtitle"] = parts[1]
+    title = parts[0]
+    var titleExtInd = title.indexOf('.')
+    if (titleExtInd>0) {title = title.substring(0,titleExtInd);}
+    Item["Title"] = title
+    Item["Subtitle"]='';
+    if (parts.length>1) {
+        subTitle = parts[1]
+        var subExtInd = parts[1].indexOf('.')
+        if (subExtInd > 0) {subTitle = subTitle.substring(0,subExtInd);}
+        Item["Subtitle"] = subTitle
+    }
     return Item;
 }
 
 function BuildSiteTree(TreeObject) {
     TreeObject.forEach(function(item,index) {
         if (TopPath ==='' || item.path.indexOf(TopPath===0)){
-            //is it an image
-            if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.JPG') || item["path"].toUpperCase().includes('.PNG'))) {
-                title = item.path.substring(item.path.lastIndexOf('/'))
+            //URL
+            url = item['url']
+            if (item["type"]=='blob') {
                 URL = 'https://raw.githubusercontent.com/' + JustRepo + '/master/'+item.path
-                target = ParseTargetFromTitle(title);
+            }
+            title = item.path.substring(item.path.lastIndexOf('/')+1)
+            target = ParseTargetFromTitle(title); 
+            newItem = null;
+            if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.JPG') || item["path"].toUpperCase().includes('.PNG'))) {                
                 if (target===null) {target='GALLERY';}
-                newItem = {Type: "Image", Title:title, Subtitle:'', Path: item.path, URL: URL }
-                SiteTree[item.path]=newItem
+                newItem = {Type: "Image", Path: item.path, URL: URL,Target:target }
             }
             else if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.MP3'))) {
-                title = item.path.substring(item.path.lastIndexOf('/'))
-                target = ParseTargetFromTitle(title);
                 if (target===null) {target='GALLERY';}
-                URL = 'https://raw.githubusercontent.com/' + JustRepo + '/master/'+item.path
-                newItem = {Type: "Audio", Title:title, Subtitle:'', Path: item.path, URL: URL }
-                SiteTree[item.path]=newItem
+                newItem = {Type: "Audio", Path: item.path, URL: URL,Target:target }
+            }
+            else if (item["type"]=='blob' 
+            && (item["path"].toUpperCase().includes('.HTML')) 
+            && !item["path"].toUpperCase().includes('INDEX.HTML')) {
+                if (target===null) {target='PAGE';}
+                newItem = {Type: "Html", Path: item.path, URL: URL,Target:target }
             }
             else if (item["type"]=='tree'){
-                title = item.path.substring(item.path.lastIndexOf('/'))
-                target = ParseTargetFromTitle(title);
                 if (target===null) {target='GALLERY';}
-                URL = item['url']
-                newItem = {Type: "Folder", Path:item.path+'/', URL: URL }
+                newItem = {Type: "Folder", Path:item.path+'/', URL: URL,Target:target }
+            }
+            if (newItem!==null) {
                 newItem = ParseTitleAndSubtitle(title,newItem);
-                SiteTree[item.path]=newItem
+                SiteTree[item.path]=newItem;
             }
         }
     })
 }
 
+function AddBannerImage(Container, Item) {
+    html = `<div class="carousel-item active">
+                <img src="`+Item.URL+`" class="d-block w-100" alt="`+Item.Title+`">
+                <div class="carousel-caption d-none d-md-block">
+                    <h5>`+Item.Title+`</h5>
+                    <p>`+Item.Subtitle+`</p>
+                </div>
+            </div>`
+    Container.innerHTML +=html;
+}
+
+function AddHTML(Container, Item) {
+    xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4) {
+            response = 'Page Not Found'
+            if (this.status == 200) {
+                response = this.responseText
+            }
+            Container.innerHTML += '<div class="col-lg-12 col-md-12 col-sm-12 animated fadeInRight"><h1>'+Item.Title+'</h1><p class="font-weight-light">'+Item.Subtitle+'</p><hr>'+response+'</div>'
+        }
+    }
+    xhttp.open("GET", Item.URL, true);
+    xhttp.send();
+    return;
+}
+
 function AddFolder(Container, Item) {
-    Container.innerHTML += '<div class="grid-item col-lg-4 col-md-6 col-sm-12" onclick=\'LoadItemsFromPathLink("'+Item.Path+'")\'><div class="paletteColour1"><h1>'+Item.Title+'</h1><p class="font-weight-light">'+Item.Subtitle+'</p></div></div>'
+    Container.innerHTML += `<div class="grid-item col-lg-4 col-md-6 col-sm-12 animated fadeIn" onclick=\'LoadItemsFromPathLink("`+Item.Path+`")\'>
+                                <div class="paletteColour1">
+                                    <h1>`+Item.Title+`</h1>
+                                    <p class="font-weight-light">`+Item.Subtitle+`</p>
+                                </div>
+                            </div>`
 }
 
 function AddImage(Container, Item) {
@@ -110,8 +156,15 @@ function AddImage(Container, Item) {
 }
 
 function AddAudio(Container, Item) {
-    console.log('adding audio: ') + URL
-    Container.innerHTML += '<div class="grid-item col-lg-4 col-md-6 col-sm-12">'+Item.Title+'<audio controls><source src="'+ Item.URL+'" type="audio/mpeg">Your browser does not support the audio element</audio></div>'
+    Container.innerHTML += `<div class="grid-item animated fadeIn col-lg-4 col-md-6 col-sm-12">
+                                <div class="col-sm-12"><h5>`+Item.Title+`</p></div>
+                                <div class="col-sm-12">
+                                    <audio controls>
+                                        <source src="`+Item.URL+`" type="audio/mpeg">
+                                        Your browser does not support the audio element
+                                    </audio>
+                                </div>
+                            </div>`
 }
 
 function LoadItemsFromPathLink(Path){
@@ -134,8 +187,10 @@ function LoadItemsToPage(Push=true,Replace=false) {
         else if (Replace) {history.replaceState('','',newURL)}
     }
     
-    htmlRender = document.getElementsByClassName('htmlRender')[0]
-    htmlRender.innerHTML = ''
+    bannerRender = document.getElementsByClassName('carousel-inner')[0]
+    bannerRender.innerHTML = ''
+    pageRender = document.getElementsByClassName('pageRender')[0]
+    pageRender.innerHTML = ''
     linkRender = document.getElementsByClassName('linkRender')[0]
     linkRender.innerHTML = ''
     galleryRender = document.getElementsByClassName('galleryRender')[0]
@@ -146,13 +201,15 @@ function LoadItemsToPage(Push=true,Replace=false) {
         || (key.indexOf(CurrentPath)===0 && key.substring(CurrentPath.length).indexOf('/')<0)) {
             item = SiteTree[key];
             targetContainer = galleryRender
-            if (item.Target==='HTML') {target = htmlRender;}
-            else if (item.Target==='LINKS') {target = linksRender;}
-            else if (item.Target==='GALLERY') {target = galleryRender;}
+            if (item.Target==='PAGE') {targetContainer = pageRender;}
+            else if (item.Target==='LINKS') {targetContainer = linksRender;}
+            else if (item.Target==='BANNER') {targetContainer = bannerRender;}
 
-            if (item.Type==='Image') {AddImage(targetContainer,item);}
+            if (item.Target==='BANNER' && item.Type==='Image') {AddBannerImage(targetContainer,item);}
+            else if (item.Type==='Image') {AddImage(targetContainer,item);}
             else if (item["Type"]=='Folder') {AddFolder(targetContainer,item);}
             else if (item["Type"]=='Audio') {AddAudio(targetContainer,item);}
+            else if (item["Type"]=='Html') {AddHTML(targetContainer,item);}
         }
     })
     RefreshMasonry()
