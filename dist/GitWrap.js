@@ -142,7 +142,7 @@ function AddHTML(Container, Item) {
                 response = this.responseText
             }
             Container.innerHTML +=
-            `<div class = "col-lg-12 col-md-12 col-sm-12 animated fadeInDown">
+            `<div class = "col-lg-12 col-md-12 col-sm-12">
                 <h1>` + Item.Title + `</h1>
                 <small ">` + Item.Subtitle + `</small>
                 <hr>` +
