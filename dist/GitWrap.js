@@ -4,8 +4,14 @@ var TopPath = '';
 var CurrentPath = '';
 
 function getRepoFromBox() {
-    userRepo = document.getElementById('repoBox').value;
-    newURL = window.location.href+'?Repo=' +userRepo
+    userRepo = document.getElementById('name_inp').value + '/' +
+               document.getElementById('repo_inp').value 
+    path = document.getElementById('fold_inp').value 
+    if (path !== '') {
+        if (path[path.length-1] !== '/') { path += '/'; }
+        userRepo += '/' + path
+    }
+    newURL = window.location.href+'?Repo=' + userRepo
     window.location.href= newURL
 }
 
@@ -79,8 +85,9 @@ function ParseTitleAndSubtitle(Title, Item) {
 }
 
 function BuildSiteTree(TreeObject) {
+    console.log('site tree top path: ' + TopPath)
     TreeObject.forEach(function(item,index) {
-        if (TopPath ==='' || item.path.indexOf(TopPath===0)){
+        if (TopPath ==='' || item.path.indexOf(TopPath)===0){
             //URL
             url = item['url']
             if (item["type"]=='blob') {
@@ -134,7 +141,13 @@ function AddHTML(Container, Item) {
             if (this.status == 200) {
                 response = this.responseText
             }
-            Container.innerHTML += '<div class="col-lg-12 col-md-12 col-sm-12 animated fadeInRight"><h1>'+Item.Title+'</h1><p class="font-weight-light">'+Item.Subtitle+'</p><hr>'+response+'</div>'
+            Container.innerHTML +=
+            `<div class = "col-lg-12 col-md-12 col-sm-12 animated fadeInDown">
+                <h1>` + Item.Title + `</h1>
+                <small ">` + Item.Subtitle + `</small>
+                <hr>` +
+                response + 
+            `</div>`
         }
     }
     xhttp.open("GET", Item.URL, true);
@@ -143,28 +156,35 @@ function AddHTML(Container, Item) {
 }
 
 function AddFolder(Container, Item) {
-    Container.innerHTML += `<div class="grid-item col-lg-4 col-md-6 col-sm-12 animated fadeIn" onclick=\'LoadItemsFromPathLink("`+Item.Path+`")\'>
-                                <div class="paletteColour1">
-                                    <h1>`+Item.Title+`</h1>
-                                    <p class="font-weight-light">`+Item.Subtitle+`</p>
-                                </div>
-                            </div>`
+    Container.innerHTML += 
+    `<div class = "grid-item clickable col-lg-4 col-md-6 col-sm-12 animated fadeIn" onclick = \'LoadItemsFromPathLink("`+Item.Path+`")\'>
+        <div class = "paletteColour1">
+            <h1>` + Item.Title + `</h1>
+            <small>` + Item.Subtitle + `</small>
+        </div>
+    </div>`
 }
 
 function AddImage(Container, Item) {
-    Container.innerHTML += '<div class="grid-item col-lg-4 col-md-6 col-sm-12"><img style="width:100%;height:100%"src="'+Item.URL+'" alt="'+Item.Title + '"></div>'
+    Container.innerHTML += 
+    `<div class = "grid-item col-lg-4 col-md-6 col-sm-12">
+        <img style = "width: 100%; height: 100%" src = "` + Item.URL + `" alt="` + Item.Title + `">
+    </div>`
 }
 
 function AddAudio(Container, Item) {
-    Container.innerHTML += `<div class="grid-item animated fadeIn col-lg-4 col-md-6 col-sm-12">
-                                <div class="col-sm-12"><h5>`+Item.Title+`</p></div>
-                                <div class="col-sm-12">
-                                    <audio controls>
-                                        <source src="`+Item.URL+`" type="audio/mpeg">
-                                        Your browser does not support the audio element
-                                    </audio>
-                                </div>
-                            </div>`
+    Container.innerHTML += `
+    <div class = "grid-item animated fadeIn col-lg-4 col-md-6 col-sm-12">
+        <div class = "col-sm-12">
+            <h5>` + Item.Title + `</p>
+        </div>
+        <div class = "col-sm-12">
+            <audio controls>
+                <source src = "` + Item.URL + `" type = "audio/mpeg">
+                Your browser does not support the audio element
+            </audio>
+        </div>
+     </div>`
 }
 
 function LoadItemsFromPathLink(Path){
@@ -218,15 +238,23 @@ function LoadItemsToPage(Push=true,Replace=false) {
 function GetRepoFiles(Repo) {
     JustRepo = Repo
     repoArray = Repo.split('/')
+    console.log(repoArray.length)
     if ((repoArray.length - 1) >2 ) { //Contains a path also
         JustRepo = repoArray[0]+'/' +repoArray[1]
         for (i = 2; i < repoArray.length; i++) {
-            TopPath += repoArray[i] + "<br>";
+            if (repoArray[i] !== '') {
+                console.log(repoArray[i] )
+                TopPath += repoArray[i] + "/";
+            } 
         }
     }
 
+    console.log('Toppath: ' + TopPath)
+    CurrentPath = TopPath
+
     masterURL = 'https://api.github.com/repos/' + JustRepo + '/branches/master'
 
+    console.log('masterURL: ' + masterURL)
     var lastCommitReq = new XMLHttpRequest();
     lastCommitReq.open("GET", masterURL, true);
     lastCommitReq.responseType = "json";
@@ -249,22 +277,6 @@ function GetRepoFiles(Repo) {
         fileTreeReq.send();
     };
     lastCommitReq.send();
-};
-
-function GetFolderContents(Repo, Directory, target) {
-    var req = new XMLHttpRequest();
-    req.open("GET", target, true);
-    req.responseType = "json";
-    req.onload = function(oEvent) {
-        console.log('received tree json')
-        var obj = req.response;
-        treeObject = obj["tree"]
-        itemList = BuildItemList(treeObject,Directory,Repo)
-        LoadItemsToPage(Repo,itemList)
-
-    };
-    console.log('Sending Request to: ' + target)
-    req.send();
 };
 
 function ShowRateLimit() {

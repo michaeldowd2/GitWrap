@@ -1,1 +1,1 @@
-.grid-item{float:left;padding:12px;background-color:transparent;cursor:pointer}.paletteColour1{padding:12px;background-color:gray;color:#fff}
+.grid-item{float:left;padding:12px;background-color:transparent}.clickable{cursor:pointer}.hidden{visibility:hidden}.paletteColour1{padding:12px;background-color:#696969;color:#fff}.paletteColour1:hover{filter:brightness(125%)}
