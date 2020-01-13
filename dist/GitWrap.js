@@ -2,6 +2,8 @@ var SiteTree = {};
 var JustRepo = '';
 var TopPath = '';
 var CurrentPath = '';
+var TotalItems = 0;
+var CurrentItems = 0;
 
 function getRepoFromBox() {
     userRepo = document.getElementById('name_inp').value + '/' +
@@ -96,23 +98,31 @@ function BuildSiteTree(TreeObject) {
             title = item.path.substring(item.path.lastIndexOf('/')+1)
             target = ParseTargetFromTitle(title); 
             newItem = null;
-            if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.JPG') || item["path"].toUpperCase().includes('.PNG'))) {                
+            if (item["type"]=='blob' 
+            && (item["path"].toUpperCase().includes('.JPG') 
+            || item["path"].toUpperCase().includes('.PNG'))) {                
                 if (target===null) {target='GALLERY';}
-                newItem = {Type: "Image", Path: item.path, URL: URL,Target:target }
+                newItem = {Type: "Image", Path: item.path, URL: URL, Target:target }
             }
-            else if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.MP3'))) {
+            else if (item["type"]=='blob' 
+            && (item["path"].toUpperCase().includes('.MP3'))) {
                 if (target===null) {target='GALLERY';}
-                newItem = {Type: "Audio", Path: item.path, URL: URL,Target:target }
+                newItem = {Type: "Audio", Path: item.path, URL: URL, Target:target }
             }
             else if (item["type"]=='blob' 
             && (item["path"].toUpperCase().includes('.HTML')) 
             && !item["path"].toUpperCase().includes('INDEX.HTML')) {
                 if (target===null) {target='PAGE';}
-                newItem = {Type: "Html", Path: item.path, URL: URL,Target:target }
+                newItem = {Type: "Html", Path: item.path, URL: URL, Target:target }
+            }
+            else if (item["type"]=='blob' 
+            && item["path"].toUpperCase().includes('.URL')) {
+                if (target===null) {target='GALLERY';}
+                newItem = {Type: "Url", Path: item.path, URL: URL, Target:target }
             }
             else if (item["type"]=='tree'){
                 if (target===null) {target='GALLERY';}
-                newItem = {Type: "Folder", Path:item.path+'/', URL: URL,Target:target }
+                newItem = {Type: "Folder", Path:item.path+'/', URL: URL, Target:target }
             }
             if (newItem!==null) {
                 newItem = ParseTitleAndSubtitle(title,newItem);
@@ -130,7 +140,8 @@ function AddBannerImage(Container, Item) {
                     <p>`+Item.Subtitle+`</p>
                 </div>
             </div>`
-    Container.innerHTML +=html;
+    Container.innerHTML += html;
+    CheckItemCountAndRefreshMasonry()
 }
 
 function AddHTML(Container, Item) {
@@ -148,6 +159,7 @@ function AddHTML(Container, Item) {
                 <hr>` +
                 response + 
             `</div>`
+            CheckItemCountAndRefreshMasonry()
         }
     }
     xhttp.open("GET", Item.URL, true);
@@ -155,7 +167,30 @@ function AddHTML(Container, Item) {
     return;
 }
 
-function AddFolder(Container, Item) {
+function AddURL(Container, Item, RefreshMasonry) {
+    xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4) {
+            response = 'URL not found'
+            if (this.status == 200) {
+                response = this.responseText.replace("URL:","")
+            }
+            Container.innerHTML +=
+            `<div class = "grid-item clickable col-lg-4 col-md-6 col-sm-12 animated fadeIn">
+                <div class = "paletteColour1" onclick="window.location='` + response + `';">
+                    <h1>` + Item.Title + `</h1>
+                    <small>` + Item.Subtitle + `</small>
+                </div>
+            </div>`
+            CheckItemCountAndRefreshMasonry()
+        }
+    }
+    xhttp.open("GET", Item.URL, true);
+    xhttp.send();
+    return;
+}
+
+function AddFolder(Container, Item, RefreshMasonry) {
     Container.innerHTML += 
     `<div class = "grid-item clickable col-lg-4 col-md-6 col-sm-12 animated fadeIn" onclick = \'LoadItemsFromPathLink("`+Item.Path+`")\'>
         <div class = "paletteColour1">
@@ -163,16 +198,18 @@ function AddFolder(Container, Item) {
             <small>` + Item.Subtitle + `</small>
         </div>
     </div>`
+    CheckItemCountAndRefreshMasonry()
 }
 
-function AddImage(Container, Item) {
+function AddImage(Container, Item, RefreshMasonry) {
     Container.innerHTML += 
     `<div class = "grid-item col-lg-4 col-md-6 col-sm-12">
         <img style = "width: 100%; height: 100%" src = "` + Item.URL + `" alt="` + Item.Title + `">
     </div>`
+    CheckItemCountAndRefreshMasonry()
 }
 
-function AddAudio(Container, Item) {
+function AddAudio(Container, Item, RefreshMasonry) {
     Container.innerHTML += `
     <div class = "grid-item animated fadeIn col-lg-4 col-md-6 col-sm-12">
         <div class = "col-sm-12">
@@ -185,6 +222,7 @@ function AddAudio(Container, Item) {
             </audio>
         </div>
      </div>`
+     CheckItemCountAndRefreshMasonry()
 }
 
 function LoadItemsFromPathLink(Path){
@@ -216,34 +254,54 @@ function LoadItemsToPage(Push=true,Replace=false) {
     galleryRender = document.getElementsByClassName('galleryRender')[0]
     galleryRender.innerHTML = ''
 
+    CountGalleryItemsForCurrentPath()
+
+    Object.keys(SiteTree).forEach(function(key) {
+        if ((CurrentPath === '' && key.indexOf('/')<0) //top level item
+        || (key.indexOf(CurrentPath)===0 && key.substring(CurrentPath.length).indexOf('/')<0)) {
+            
+            refreshMasonry = false
+            item = SiteTree[key];
+            targetContainer = galleryRender
+            if (item.Target==='LINKS') {targetContainer = linksRender;}
+            else if (item.Target==='BANNER') {targetContainer = bannerRender;}
+            else if (item.Target==='PAGE') { targetContainer = pageRender; }
+
+            if (item.Target==='BANNER' && item.Type==='Image') {AddBannerImage(targetContainer,item);}
+            else if (item.Type==='Image') {AddImage(targetContainer, item);}
+            else if (item["Type"]=='Folder') {AddFolder(targetContainer, item);}
+            else if (item["Type"]=='Audio') {AddAudio(targetContainer, item);}
+            else if (item["Type"]=='Html') {AddHTML(targetContainer, item);}
+            else if (item["Type"]=='Url') {AddURL(targetContainer, item);}
+        }
+    })
+}
+
+function CountGalleryItemsForCurrentPath() {
+    TotalItems = 0
+    CurrentItems = 0
     Object.keys(SiteTree).forEach(function(key) {
         if ((CurrentPath==='' && key.indexOf('/')<0) //top level item
         || (key.indexOf(CurrentPath)===0 && key.substring(CurrentPath.length).indexOf('/')<0)) {
-            item = SiteTree[key];
-            targetContainer = galleryRender
-            if (item.Target==='PAGE') {targetContainer = pageRender;}
-            else if (item.Target==='LINKS') {targetContainer = linksRender;}
-            else if (item.Target==='BANNER') {targetContainer = bannerRender;}
-
-            if (item.Target==='BANNER' && item.Type==='Image') {AddBannerImage(targetContainer,item);}
-            else if (item.Type==='Image') {AddImage(targetContainer,item);}
-            else if (item["Type"]=='Folder') {AddFolder(targetContainer,item);}
-            else if (item["Type"]=='Audio') {AddAudio(targetContainer,item);}
-            else if (item["Type"]=='Html') {AddHTML(targetContainer,item);}
+            TotalItems += 1;
         }
     })
-    RefreshMasonry()
+}
+
+function CheckItemCountAndRefreshMasonry() {
+    CurrentItems += 1
+    if (CurrentItems === TotalItems) {
+        RefreshMasonry()
+    }
 }
 
 function GetRepoFiles(Repo) {
     JustRepo = Repo
     repoArray = Repo.split('/')
-    console.log(repoArray.length)
     if ((repoArray.length - 1) >2 ) { //Contains a path also
         JustRepo = repoArray[0]+'/' +repoArray[1]
         for (i = 2; i < repoArray.length; i++) {
             if (repoArray[i] !== '') {
-                console.log(repoArray[i] )
                 TopPath += repoArray[i] + "/";
             } 
         }
