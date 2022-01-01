@@ -22,4 +22,6 @@ http://projecternest.com
 
 Same as above but pointing to a specific folder in the same repo. This way I can just update the content in one place, commit and push changes and both sites are automatically updated
 
+## Where?
+To dress up your own repo, go here: [GitWrap](https://michaeldowd2.github.io/GitWrap/)
 
