@@ -21,6 +21,11 @@ function createURL() {
         newURL += '&Title=' + title.replaceAll(' ', '+');
     }
 
+    link_method = document.getElementById('site_link_method').value
+    if (link_method != '') {
+        newURL += '&LM=' + link_method;
+    }
+
     window.location.href= newURL
 }
 
@@ -91,9 +96,8 @@ function ParseTitleAndSubtitle(Title, Item) {
     return Item;
 }
 
-function BuildSiteTree(TreeObject) {
-    console.log('site tree top path: ' + TopPath)
-    TreeObject.forEach(function(item,index) {
+function BuildSiteTree(tree_object, folder_target) {
+    tree_object.forEach(function(item,index) {
         if (TopPath ==='' || item.path.indexOf(TopPath)===0){
             //URL
             url = item['url']
@@ -103,30 +107,24 @@ function BuildSiteTree(TreeObject) {
             title = item.path.substring(item.path.lastIndexOf('/')+1)
             target = ParseTargetFromTitle(title); 
             newItem = null;
-            if (item["type"]=='blob' 
-            && (item["path"].toUpperCase().includes('.JPG') 
-            || item["path"].toUpperCase().includes('.PNG'))) {                
+            if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.JPG') || item["path"].toUpperCase().includes('.PNG'))) {                
                 if (target===null) {target='GALLERY';}
                 newItem = {Type: "Image", Path: item.path, URL: URL, Target:target }
             }
-            else if (item["type"]=='blob' 
-            && (item["path"].toUpperCase().includes('.MP3'))) {
+            else if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.MP3'))) {
                 if (target===null) {target='GALLERY';}
                 newItem = {Type: "Audio", Path: item.path, URL: URL, Target:target }
             }
-            else if (item["type"]=='blob' 
-            && (item["path"].toUpperCase().includes('.HTML')) 
-            && !item["path"].toUpperCase().includes('INDEX.HTML')) {
+            else if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.HTML')) && !item["path"].toUpperCase().includes('INDEX.HTML')) {
                 if (target===null) {target='PAGE';}
                 newItem = {Type: "Html", Path: item.path, URL: URL, Target:target }
             }
-            else if (item["type"]=='blob' 
-            && item["path"].toUpperCase().includes('.URL')) {
-                if (target===null) {target='GALLERY';}
+            else if (item["type"]=='blob' && item["path"].toUpperCase().includes('.URL')) {
+                if (target === null) { target = folder_target;}
                 newItem = {Type: "Url", Path: item.path, URL: URL, Target:target }
             }
             else if (item["type"]=='tree'){
-                if (target===null) {target='GALLERY';}
+                if (target === null) { target = folder_target;}
                 newItem = {Type: "Folder", Path:item.path+'/', URL: URL, Target:target }
             }
             if (newItem!==null) {
@@ -300,9 +298,9 @@ function CheckItemCountAndRefreshMasonry() {
     }
 }
 
-function GetRepoFiles(Repo) {
-    JustRepo = Repo
-    repoArray = Repo.split('/')
+function GetRepoFiles(repo, folder_target) {
+    JustRepo = repo
+    repoArray = repo.split('/')
     if ((repoArray.length - 1) >2 ) { //Contains a path also
         JustRepo = repoArray[0]+'/' +repoArray[1]
         for (i = 2; i < repoArray.length; i++) {
@@ -312,12 +310,10 @@ function GetRepoFiles(Repo) {
         }
     }
 
-    console.log('Toppath: ' + TopPath)
     CurrentPath = TopPath
-
     masterURL = 'https://api.github.com/repos/' + JustRepo + '/branches/master'
 
-    console.log('masterURL: ' + masterURL)
+    console.log('Master URL: ' + masterURL)
     var lastCommitReq = new XMLHttpRequest();
     lastCommitReq.open("GET", masterURL, true);
     lastCommitReq.responseType = "json";
@@ -331,10 +327,9 @@ function GetRepoFiles(Repo) {
             var obj = fileTreeReq.response;
             console.log('received json for tree')
             treeObject = obj["tree"]
-            BuildSiteTree(treeObject)
-            console.log('SiteTree')
-            console.log(SiteTree)
-            LoadItemsToPage(Push=false, Replace=true)
+            BuildSiteTree(treeObject, folder_target)
+            LoadItemsToPage(Push = false, Replace = true)
+            LoadNavbar(SiteTree)
             return;
         };
         fileTreeReq.send();
@@ -360,13 +355,145 @@ function LoadPageTitle(title) {
     titleEl.setAttribute('href', window.location.href)
 }
 
+function LoadNavbar(site_tree) {
+    var top_navs = []
+    var children = {}
+    for (const [key, value] of Object.entries(site_tree)) {
+        if (value.Target == 'NAV') {
+            parts = key.split('/')
+            if (parts.length > 1) {
+                parent_key = parts.slice(0, parts.length - 1).join('/')
+                if (!(parent_key in children)) {
+                    children[parent_key] = []
+                }
+                children[parent_key].push(key)
+            }
+            else {
+                children[key] = []
+                top_navs.push(key)
+            }
+        }
+    }
+    console.log('children')
+    console.log(children)
+    console.log(site_tree)
+    var html = '<ul class="navbar-nav">'
+    top_navs.forEach(function (top_nav) {
+        if (children[top_nav].length > 0) {
+            html += '<li class="nav-item dropdown">'
+            html += '<div class="dropdown-item" onclick="LoadItemsFromPathLink(\'' + top_nav + '/\')">' + site_tree[top_nav].Title +'</div>'
+            html += '<a class="nav-link dropdown-toggle dropdown-item expander_nav" href="#" data-bs-toggle="dropdown"> '
+        }
+        else {
+            html += '<li class="nav-item">'
+            html += '<div class="dropdown-item" onclick="LoadItemsFromPathLink(\'' + top_nav + '/\')">' + site_tree[top_nav].Title + '</div>'
+            html += '<a class="nav-link" href = "#"> '
+        }
+        html +=  '</a > '
+        html += AddChildNavs(top_nav, children, site_tree, 0)
+        html += '</li>'
+    })
+    html += '</ul>'
+    //    if (value.Target == 'NAV') {
+    //        html += '<li class="nav-item'
+    //        console.log(key)
+    //        console.log(value)
+    //    }
+    //}
+
+    //`<ul class="navbar-nav">
+    //<li class="nav-item active"> <a class="nav-link" href="#">Home </a> </li>
+    //<li class="nav-item"><a class="nav-link" href="#"> About </a></li>
+    //<li class="nav-item dropdown" id="myDropdown">
+    //  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">  Treeview menu  </a>
+    //  <ul class="dropdown-menu">
+    //    <li> <a class="dropdown-item" href="#"> Dropdown item 1 </a></li>
+    //    <li> <a class="dropdown-item" href="#"> Dropdown item 2 &raquo; </a>
+    //      <ul class="submenu dropdown-menu">
+    //        <li><a class="dropdown-item" href="#">Submenu item 1</a></li>
+    //        <li><a class="dropdown-item" href="#">Submenu item 2</a></li>
+    //        <li><a class="dropdown-item" href="#">Submenu item 3 &raquo; </a>
+    //          <ul class="submenu dropdown-menu">
+    //            <li><a class="dropdown-item" href="#">Multi level 1</a></li>
+    //            <li><a class="dropdown-item" href="#">Multi level 2</a></li>
+    //          </ul>
+    //        </li>
+    //        <li><a class="dropdown-item" href="#">Submenu item 4</a></li>
+    //        <li><a class="dropdown-item" href="#">Submenu item 5</a></li>
+    //      </ul>
+    //    </li>
+    //    <li><a class="dropdown-item" href="#"> Dropdown item 3 </a></li>
+    //    <li><a class="dropdown-item" href="#"> Dropdown item 4 </a></li>
+    //  </ul>`
+    document.getElementById('main_nav').innerHTML = html;
+    console.log(html)
+
+        
+    if (window.innerWidth < 992) {
+
+        // close all inner dropdowns when parent is closed
+        document.querySelectorAll('.navbar .dropdown').forEach(function (everydropdown) {
+            everydropdown.addEventListener('hidden.bs.dropdown', function () {
+                // after dropdown is hidden, then find all submenus
+                this.querySelectorAll('.submenu').forEach(function (everysubmenu) {
+                    // hide every submenu as well
+                    everysubmenu.style.display = 'none';
+                });
+            })
+        });
+
+        document.querySelectorAll('.dropdown-menu a').forEach(function (element) {
+            element.addEventListener('click', function (e) {
+                let nextEl = this.nextElementSibling;
+                if (nextEl && nextEl.classList.contains('submenu')) {
+                    // prevent opening link if link needs to open dropdown
+                    e.preventDefault();
+                    if (nextEl.style.display == 'block') {
+                        nextEl.style.display = 'none';
+                    } else {
+                        nextEl.style.display = 'block';
+                    }
+
+                }
+            });
+        })
+    }
+}
+
+function AddChildNavs(key, children, site_tree, level) {
+    html = '';
+    if (key in children) {
+        if (level == 0) {
+            html += '<ul class="dropdown-menu">'
+        }
+        else {
+            html += '<ul class="submenu dropdown-menu">'
+        }
+        children[key].forEach(function (child) {
+            html += '<div class="dropdown-item" onclick="LoadItemsFromPathLink(\''+child+'/\')">' + site_tree[child].Title + '</div>'
+            //html += '<li><a class="dropdown-item" href="#" style="display:inline;width:80%"></a>'
+            if (child in children) {
+                html += '<li><div class="dropdown-item expander" href="#" style="">&raquo;</div>'
+                html += AddChildNavs(child, children, site_tree, level + 1)
+                html += '</li>'
+            }
+        })
+        html += '</ul>'
+    }
+    return html
+}
+
 function LoadFromParams() {
     res = getJsonFromUrl()
     console.log('URL Params')
     console.log(res)
     if ('Repo' in res & res.Repo != '') {
         document.getElementById('loadBox').style.display = "none";
-        GetRepoFiles(res.Repo)
+        folder_target = 'NAV'
+        if ('LM' in res) {
+            folder_target = res.LM
+        }
+        GetRepoFiles(res.Repo, folder_target)
         if ('Title' in res & res.Title != '') {
             LoadPageTitle(res.Title)
         }
@@ -379,6 +506,7 @@ function LoadFromParams() {
         document.getElementById('content').style.display = "none";
     }
 }
+
 
 window.onpopstate = function (event) {
     getJsonFromUrl()

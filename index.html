@@ -6,11 +6,12 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.slim.min.js" defer></script>
-	    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.1/js/bootstrap.min.js" defer></script>
+	    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.0.1/js/bootstrap.bundle.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.11.0/umd/popper.min.js"></script>
 	    <script src="https://unpkg.com/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
         <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>        
 	
-	    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.1/css/bootstrap.min.css">
+	    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.0.1/css/bootstrap.min.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.2/animate.min.css">
         
         <script src="dist/GitWrap.js"></script>
@@ -19,14 +20,21 @@
 
     <body>
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
-          <a class="navbar-brand" href="">Git Wrap</a>
+
+          <!--<a class="navbar-brand" href="">Git Wrap</a>
           <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
-          <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-            </ul>
-          </div>
+          <div class="collapse navbar-collapse" id="main_nav"></div>-->
+
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">Brand</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main_nav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="main_nav"> </div>
+            </div>
+
         </nav>
         
         <div id="carouselExampleCaptions" class="carousel slide" data-ride="carousel">
@@ -73,7 +81,7 @@
                         <input id="repo_inp" type="text" class="form-control" value="michaeldowd2.github.io" placeholder="repo"  style="width:92%;display:inline" >
                         <div class="input-group-append" style="display:inline">/</div>
                     </div>
-                    <div class="col-4 input-group" style="padding-right:0px">
+                    <div class="col-4 input-group" style="padding-right:0px;width:auto">
                         <input id="fold_inp" type="text" class="form-control" placeholder="Optional: folder">
                         <div class="input-group-append" style="display:block">
                             <button class="btn btn-outline-secondary" onclick="createURL()" type="button" id="button-addon2">Build</button>
@@ -84,20 +92,25 @@
                 <br>
                 <div id="accordion" class="col-lg-12 col-md-12 col-sm-12">
                     <div class="card">
-                        <div class="card-header" id="headingOne">
-                            <h5 class="mb-0">
-                                <button class="btn btn-link" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                                    Theme and Options
-                                </button>
-                            </h5>
-                        </div>
-                      
-                        <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
-                            <div class="card-body">
+                        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                            Theme Options
+                        </button>
+                        <div class="collapse" id="collapseExample">
+                            <div class="card card-body">
                                 <div class="form-group row">
-                                    <label class="col-sm-2 col-form-label">Title</label>
-                                    <div class="col-sm-10">
+                                    <label class="col-sm-4 col-form-label">Title</label>
+                                    <div class="col-sm-8">
                                         <input id="site_title_input" type="text" class="form-control" value="">
+                                    </div>
+                                </div>
+                                <div class="form-group row" style="margin-top:12px">
+                                    <label class="col-sm-4 col-form-label">Link Render Method</label>
+                                    <div class="col-sm-8">
+                                        <select id="site_link_method" class="form-select" aria-label="">
+                                            <option selected value="NAV">Navbar</option>
+                                            <option value="GALLERY">Tiles</option>
+
+                                        </select>
                                     </div>
                                 </div>
                             </div>

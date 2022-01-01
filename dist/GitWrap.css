@@ -27,3 +27,64 @@
 .paletteColour1:hover {
     filter: brightness(125%);
 }
+
+@media all and (min-width: 992px) {
+    .dropdown-menu li {
+        position: relative;
+    }
+
+    .dropdown-item {
+        padding-right:36px;
+        padding-left:16px;
+    }
+
+    .dropdown-item:hover {
+        cursor: pointer;
+    }
+
+    .nav-item .submenu {
+        display: none;
+        position: absolute;
+        left: 100%;
+        top: -41px;
+    }
+
+    .nav-item .submenu-left {
+        right: 100%;
+        left: auto;
+    }
+
+    .dropdown-menu > li:hover {
+        background-color: #f1f1f1;
+    }
+
+    .dropdown-menu > li:hover > .submenu {
+        display: block;
+    }
+
+    .expander_nav {
+        position:absolute;
+        right:0px;
+        margin-top:-32px;
+        width:32px;
+        margin-right:0px;
+        padding:4px;
+    }
+
+    .expander {
+        position: absolute;
+        right: 0px;
+        margin-top: -32px;
+        width: 32px;
+    }
+}
+/* ============ desktop view .end// ============ */
+
+/* ============ small devices ============ */
+@media (max-width: 991px) {
+    .dropdown-menu .dropdown-menu {
+        margin-left: 0.7rem;
+        margin-right: 0.7rem;
+        margin-bottom: .5rem;
+    }
+}	
