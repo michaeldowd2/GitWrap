@@ -5,7 +5,7 @@ var CurrentPath = '';
 var TotalItems = 0;
 var CurrentItems = 0;
 
-function getRepoFromBox() {
+function createURL() {
     userRepo = document.getElementById('name_inp').value + '/' +
                document.getElementById('repo_inp').value 
     path = document.getElementById('fold_inp').value 
@@ -13,7 +13,14 @@ function getRepoFromBox() {
         if (path[path.length-1] !== '/') { path += '/'; }
         userRepo += '/' + path
     }
-    newURL = window.location.href+'?Repo=' + userRepo
+    newURL = window.location.href + '?Repo=' + userRepo
+
+    //store site title in URL
+    title = document.getElementById('site_title_input').value
+    if (title != '') {
+        newURL += '&Title=' + title.replaceAll(' ', '+');
+    }
+
     window.location.href= newURL
 }
 
@@ -43,12 +50,10 @@ function getJsonFromUrl(url) {
             else result[key][index] = val;
         }
     });
-    if (!jQuery.isEmptyObject(result.Repo)) {REPO=result.Repo;}
+    //if (!jQuery.isEmptyObject(result.Repo)) {REPO=result.Repo;}
     if (!jQuery.isEmptyObject(result.Path)) {CurrentPath=result.Path;}
     else {CurrentPath='';}
-    console.log('Repo from URL: ' + REPO)
-    console.log('Current Path from URL: ' + CurrentPath)
-    return result['Repo'];
+    return result;
 }
 
 function ParseTargetFromTitle(Title) {
@@ -349,21 +354,26 @@ function ShowRateLimit() {
     req.send();
 }
 
-function LoadPageTemplate() {
-    console.log('loading brand')
-    title = REPO.substring(REPO.indexOf('/')+1)
+function LoadPageTitle(title) {
     titleEl = document.getElementsByClassName('navbar-brand')[0]
-    titleEl.innerHTML=title
-    titleEl.setAttribute('href',window.location.href)
+    titleEl.innerHTML = title
+    titleEl.setAttribute('href', window.location.href)
 }
 
 function LoadFromParams() {
-    getJsonFromUrl()
-    if (REPO!=='') {
-        console.log('Repo: ' + REPO)
+    res = getJsonFromUrl()
+    console.log('URL Params')
+    console.log(res)
+    if ('Repo' in res & res.Repo != '') {
         document.getElementById('loadBox').style.display = "none";
-        LoadPageTemplate()
-        GetRepoFiles(REPO)
+        GetRepoFiles(res.Repo)
+        if ('Title' in res & res.Title != '') {
+            LoadPageTitle(res.Title)
+        }
+        else {
+            title = res.Repo.substring(res.Repo.indexOf('/') + 1)
+            LoadPageTitle(title)
+        }
     }
     else { //Showing the site generator
         document.getElementById('content').style.display = "none";
@@ -373,5 +383,4 @@ function LoadFromParams() {
 window.onpopstate = function (event) {
     getJsonFromUrl()
     LoadItemsToPage(Push=false,Replace=false)
-
 };

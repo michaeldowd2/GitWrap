@@ -1,15 +1,13 @@
-# GitWrap - WORK IN PROGRESS
+# GitWrap
 
-## What is this?
-An low maintainance javascript site generator for public github repositories.
-- Online site generator to use with a public github repo: for free, no sign-up, no install and instantly get a sharable link. 
-- Or if using github pages you can copy the index.html file to your own repo and update the REPO constant for a nicer URL.
+## What am I looking at?
+GitWrap uses the github API and javascript to build a bootstrap website from a public repo or folder in github. It's essentially a bootstrap suit for github content. It all happens in the client browser, so no installation or registration is required, just point it at a repo, press build and copy the generated URL.
 
 ## Why?
-I had content and project results that I wanted to put in some websites and share with people, but I didn't want to have to spend time updating these sites or paying to keep them online. Enter GitWrap: it leverages github's API and free file hosting to dynamically build sites on top of public github repos.
+If you have some image, audio or youtube content that you want to pull together onto a website, but not pay for hosting or spend time messing around with a CMS, you can use git + a github account + gitwrap to create a basic bootstrap frontend for your content.
 
 ## How?
-Using javascript calls to the github api, GitWrap retrieves a list of folders and content from the specified repo, then dresses these up in some bootstrap html for presenting to the world. All of it happens client-side in javascript so the GitWrapper generator can be hosted in a free github.io page.
+Using javascript calls to the github api, GitWrap retrieves a list of folders and content from the specified repo, then dresses these up in some bootstrap html for presenting to the world. All of it happens client-side in javascript so the generator can be hosted and run for free with github.io pages.
 
 ## Examples
 ### 1. URL Forwarding -> Gitwrap generated URL -> public github repo

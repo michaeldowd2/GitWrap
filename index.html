@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang='en'>
     <head>
          <!-- Required meta tags -->
@@ -6,22 +6,15 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.slim.min.js" defer></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.1/js/bootstrap.min.js" defer></script>
-	<script src="https://unpkg.com/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
+	    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.1/js/bootstrap.min.js" defer></script>
+	    <script src="https://unpkg.com/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
         <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>        
 	
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.1/css/bootstrap.min.css">
+	    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.1/css/bootstrap.min.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.2/animate.min.css">
         
-        <!--<script src="https://cdn.jsdelivr.net/gh/michaeldowd2/GitWrap/dist/GitWrap.min.js"></script> -->
         <script src="dist/GitWrap.js"></script>
-        <!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/michaeldowd2/GitWrap/dist/GitWrap.min.css"> -->
         <link rel="stylesheet" href="dist/GitWrap.css">
-
-        <script>
-            var REPO = '';
-            var THEMESTRING = '';
-        </script>
     </head>
 
     <body>
@@ -64,29 +57,32 @@
                             What is this?
                         </div>
                         <div class="card-body">
-                            GitWrap uses the github api to dynamically build a bootstrap website from a public repo or folder in a repo
+                            GitWrap uses the github API and javascript to build a bootstrap website from a public repo or folder in github. It all happens in the client browser, so no installation or registration is required, just point it at a repo, press build and copy the generated URL. 
                         </div>
                     </div>
                 </div>
                 <br>
-                <div class="input-group form-row input-group-lg col-lg-12">
+                <div class="input-group form-row input-group-lg col-lg-12" style="margin:0px">
                     <div class="col-2" style="margin-top:8px; text-align:right">http://github.com/</div>
-                    <div class="col-3" style="padding-right:12px">
-                        <input id="name_inp" type="text" class="form-control" value="michaeldowd2" placeholder="username" style="display:inline; margin-right:6px">/
+                    <div class="col-3" >
+                        <input id="name_inp" type="text" class="form-control" value="michaeldowd2" placeholder="username" style="width:92%;display:inline">
+                        <div class="input-group-append" style="display:inline">/</div>
+
                     </div>
-                    <div class="col-3" style="padding-right:12px">
-                        <input id="repo_inp" type="text" class="form-control" value="michaeldowd2.github.io" placeholder="repo" style="display:inline; margin-right:6px">/
+                    <div class="col-3" >
+                        <input id="repo_inp" type="text" class="form-control" value="michaeldowd2.github.io" placeholder="repo"  style="width:92%;display:inline" >
+                        <div class="input-group-append" style="display:inline">/</div>
                     </div>
-                    <div class="col-4 input-group">
+                    <div class="col-4 input-group" style="padding-right:0px">
                         <input id="fold_inp" type="text" class="form-control" placeholder="Optional: folder">
-                        <div class="input-group-append">
-                            <button class="btn btn-outline-secondary" onclick="getRepoFromBox()" type="button" id="button-addon2">Build</button>
+                        <div class="input-group-append" style="display:block">
+                            <button class="btn btn-outline-secondary" onclick="createURL()" type="button" id="button-addon2">Build</button>
                         </div>
                     </div>
                 </div>
 
                 <br>
-                <div id="accordion" class="col-lg-12 col-md-12 col-sm-12"">
+                <div id="accordion" class="col-lg-12 col-md-12 col-sm-12">
                     <div class="card">
                         <div class="card-header" id="headingOne">
                             <h5 class="mb-0">
@@ -101,7 +97,7 @@
                                 <div class="form-group row">
                                     <label class="col-sm-2 col-form-label">Title</label>
                                     <div class="col-sm-10">
-                                        <input type="text" class="form-control" value="">
+                                        <input id="site_title_input" type="text" class="form-control" value="">
                                     </div>
                                 </div>
                             </div>
