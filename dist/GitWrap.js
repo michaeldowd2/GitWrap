@@ -359,10 +359,19 @@ function LoadNavbar(site_tree) {
     var top_navs = []
     var children = {}
     for (const [key, value] of Object.entries(site_tree)) {
+        var trimmed_key = key
+        if (key.indexOf(TopPath) == 0) {
+            trimmed_key = trimmed_key.replace(TopPath, '')
+        }
         if (value.Target == 'NAV') {
-            parts = key.split('/')
+            parts = trimmed_key.split('/')
             if (parts.length > 1) {
                 parent_key = parts.slice(0, parts.length - 1).join('/')
+
+                if (TopPath != '') {
+                    parent_key = TopPath + parent_key
+                }
+
                 if (!(parent_key in children)) {
                     children[parent_key] = []
                 }
@@ -374,22 +383,23 @@ function LoadNavbar(site_tree) {
             }
         }
     }
+    //console.log('top level')
+    //console.log(TopPath)
     //console.log('children')
     //console.log(children)
-    //console.log(site_tree)
+    //console.log('top navs')
+    //console.log(top_navs)
     var html = '<ul class="navbar-nav">'
     top_navs.forEach(function (top_nav) {
         if (children[top_nav].length > 0) {
             html += '<li class="nav-item dropdown">'
             html += '<div class="dropdown-item" onclick="LoadItemsFromPathLink(\'' + top_nav + '/\')">' + site_tree[top_nav].Title +'</div>'
-            html += '<a class="nav-link dropdown-toggle dropdown-item expander_nav" href="#" data-bs-toggle="dropdown"> '
+            html += '<a class="nav-link dropdown-toggle dropdown-item expander_nav" href="#" data-bs-toggle="dropdown"></a>'
         }
         else {
             html += '<li class="nav-item">'
             html += '<div class="dropdown-item" onclick="LoadItemsFromPathLink(\'' + top_nav + '/\')">' + site_tree[top_nav].Title + '</div>'
-            html += '<a class="nav-link" href = "#"> '
         }
-        html +=  '</a > '
         html += AddChildNavs(top_nav, children, site_tree, 0)
         html += '</li>'
     })
