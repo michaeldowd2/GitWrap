@@ -374,9 +374,9 @@ function LoadNavbar(site_tree) {
             }
         }
     }
-    console.log('children')
-    console.log(children)
-    console.log(site_tree)
+    //console.log('children')
+    //console.log(children)
+    //console.log(site_tree)
     var html = '<ul class="navbar-nav">'
     top_navs.forEach(function (top_nav) {
         if (children[top_nav].length > 0) {
@@ -394,41 +394,8 @@ function LoadNavbar(site_tree) {
         html += '</li>'
     })
     html += '</ul>'
-    //    if (value.Target == 'NAV') {
-    //        html += '<li class="nav-item'
-    //        console.log(key)
-    //        console.log(value)
-    //    }
-    //}
-
-    //`<ul class="navbar-nav">
-    //<li class="nav-item active"> <a class="nav-link" href="#">Home </a> </li>
-    //<li class="nav-item"><a class="nav-link" href="#"> About </a></li>
-    //<li class="nav-item dropdown" id="myDropdown">
-    //  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">  Treeview menu  </a>
-    //  <ul class="dropdown-menu">
-    //    <li> <a class="dropdown-item" href="#"> Dropdown item 1 </a></li>
-    //    <li> <a class="dropdown-item" href="#"> Dropdown item 2 &raquo; </a>
-    //      <ul class="submenu dropdown-menu">
-    //        <li><a class="dropdown-item" href="#">Submenu item 1</a></li>
-    //        <li><a class="dropdown-item" href="#">Submenu item 2</a></li>
-    //        <li><a class="dropdown-item" href="#">Submenu item 3 &raquo; </a>
-    //          <ul class="submenu dropdown-menu">
-    //            <li><a class="dropdown-item" href="#">Multi level 1</a></li>
-    //            <li><a class="dropdown-item" href="#">Multi level 2</a></li>
-    //          </ul>
-    //        </li>
-    //        <li><a class="dropdown-item" href="#">Submenu item 4</a></li>
-    //        <li><a class="dropdown-item" href="#">Submenu item 5</a></li>
-    //      </ul>
-    //    </li>
-    //    <li><a class="dropdown-item" href="#"> Dropdown item 3 </a></li>
-    //    <li><a class="dropdown-item" href="#"> Dropdown item 4 </a></li>
-    //  </ul>`
     document.getElementById('main_nav').innerHTML = html;
-    console.log(html)
 
-        
     if (window.innerWidth < 992) {
 
         // close all inner dropdowns when parent is closed
