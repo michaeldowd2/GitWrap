@@ -26,7 +26,28 @@ function createURL() {
         newURL += '&LM=' + link_method;
     }
 
+    newURL += '&TS=' + EncodeThemeFromUI()
+
     window.location.href= newURL
+}
+
+function GetDefaultTheme() {
+    return '0'
+}
+
+function EncodeThemeFromUI() {
+    themestring = ''
+    brand_font = document.getElementById('site_brand_font').value
+    themestring += brand_font
+
+    return themestring
+}
+
+function DecodeThemeFromUI(theme_string) {
+    theme = {}
+    theme['brand_font_class'] = 'brand_'+theme_string.substring(0, 1)
+
+    return theme
 }
 
 function getJsonFromUrl(url) {
@@ -57,7 +78,12 @@ function getJsonFromUrl(url) {
     });
     //if (!jQuery.isEmptyObject(result.Repo)) {REPO=result.Repo;}
     if (!jQuery.isEmptyObject(result.Path)) {CurrentPath=result.Path;}
-    else {CurrentPath='';}
+    else { CurrentPath = ''; }
+    var TS = GetDefaultTheme()
+    if ('TS' in result) {
+        TS = result['TS']
+    }
+    result['Theme'] = DecodeThemeFromUI(TS)
     return result;
 }
 
@@ -349,10 +375,11 @@ function ShowRateLimit() {
     req.send();
 }
 
-function LoadPageTitle(title) {
+function SetSiteBrand(title, theme) {
     titleEl = document.getElementsByClassName('navbar-brand')[0]
     titleEl.innerHTML = title
     titleEl.setAttribute('href', window.location.href)
+    titleEl.classList.add(theme['brand_font_class']);
 }
 
 function LoadNavbar(site_tree) {
@@ -472,11 +499,11 @@ function LoadFromParams() {
         }
         GetRepoFiles(res.Repo, folder_target)
         if ('Title' in res & res.Title != '') {
-            LoadPageTitle(res.Title)
+            SetSiteBrand(res.Title, res['Theme'])
         }
         else {
             title = res.Repo.substring(res.Repo.indexOf('/') + 1)
-            LoadPageTitle(title)
+            SetSiteBrand(title, res['Theme'])
         }
     }
     else { //Showing the site generator

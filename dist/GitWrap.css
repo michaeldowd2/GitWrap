@@ -28,6 +28,56 @@
     filter: brightness(125%);
 }
 
+.light_shadow {
+    box-shadow: 0px 5px 10px #ababab;
+}
+
+.content_narrow {
+    margin-left:5%;
+    margin-right:5%;
+    height:100%;
+    margin-top:-24px;
+    background-color:white;
+}
+
+/*brand classes*/
+.brand_0 {
+    font-family: 'Syne Mono', monospace;
+    font-size: 28px;
+}
+
+.brand_1 {
+    font-family: 'Yomogi', cursive;
+    font-size: 28px;
+}
+
+.brand_2 {
+    font-family: 'East Sea Dokdo', cursive;
+    font-size: 28px;
+}
+
+.brand_3 {
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+}
+
+.navbar-brand.abs {
+    position: absolute;
+    width: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    top:2px;
+}
+
+.pageRender {
+    padding:12px;
+}
+
+body {
+    background-color:lightgray;
+}
+
 @media all and (min-width: 992px) {
     .dropdown-menu li {
         position: relative;

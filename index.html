@@ -1,25 +1,31 @@
 ﻿<!doctype html>
 <html lang='en'>
-    <head>
-         <!-- Required meta tags -->
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.slim.min.js" defer></script>
-	    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.0.1/js/bootstrap.bundle.min.js" defer></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.11.0/umd/popper.min.js"></script>
-	    <script src="https://unpkg.com/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
-        <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>        
-	
-	    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.0.1/css/bootstrap.min.css">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.2/animate.min.css">
-        
-        <script src="dist/GitWrap.js"></script>
-        <link rel="stylesheet" href="dist/GitWrap.css">
-    </head>
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.slim.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.0.1/js/bootstrap.bundle.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.11.0/umd/popper.min.js"></script>
+    <script src="https://unpkg.com/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
+    <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.0.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
+    <script src="dist/GitWrap.js"></script>
+    <link rel="stylesheet" href="dist/GitWrap.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=East+Sea+Dokdo&family=Syne+Mono&family=VT323&family=Yomogi&display=swap" rel="stylesheet">
+
+    
+</head>
 
     <body>
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light light_shadow">
 
           <!--<a class="navbar-brand" href="">Git Wrap</a>
           <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,16 +34,16 @@
           <div class="collapse navbar-collapse" id="main_nav"></div>-->
 
             <div class="container-fluid">
-                <a class="navbar-brand" href="#">Brand</a>
+                <a class="navbar-brand abs" href="#">Gitwrap</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main_nav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="collapse navbar-collapse" id="main_nav"> </div>
+                <div class="collapse navbar-collapse justify-content-center" style="margin-top:44px" id="main_nav"> </div>
             </div>
 
         </nav>
         
-        <div id="carouselExampleCaptions" class="carousel slide" data-ride="carousel">
+        <div id="carouselExampleCaptions " class="carousel slide light_shadow" data-ride="carousel">
             <ol class="carousel-indicators">
                 <li data-target="#carouselExampleCaptions" data-slide-to="0" class="active"></li>
                 <li data-target="#carouselExampleCaptions" data-slide-to="1"></li>
@@ -46,15 +52,16 @@
             <div class="carousel-inner">
                 
             </div>
-            <a class="carousel-control-prev" href="#carouselExampleCaptions" role="button" data-slide="prev">
+            <!--<a class="carousel-control-prev" href="#carouselExampleCaptions" role="button" data-slide="prev">
                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                 <span class="sr-only">Previous</span>
             </a>
             <a class="carousel-control-next" href="#carouselExampleCaptions" role="button" data-slide="next">
                 <span class="carousel-control-next-icon" aria-hidden="true"></span>
                 <span class="sr-only">Next</span>
-            </a>
+            </a>-->
         </div>
+
         <br>
         <div id="loadBox" class="row">
             <div class="col-lg-2 col-md-0 col-sm-0"></div>
@@ -104,12 +111,22 @@
                                     </div>
                                 </div>
                                 <div class="form-group row" style="margin-top:12px">
+                                    <label class="col-sm-4 col-form-label">Brand Font</label>
+                                    <div class="col-sm-8">
+                                        <select id="site_brand_font" class="form-select" aria-label="">
+                                            <option class="brand_0" selected value="0">Syne Mono</option>
+                                            <option class="brand_1" value="1">Yomogi</option>
+                                            <option class="brand_2" value="2">East Sea Dokdo</option>
+                                            <option class="brand_3" value="3">VT323</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row" style="margin-top:12px">
                                     <label class="col-sm-4 col-form-label">Link Render Method</label>
                                     <div class="col-sm-8">
                                         <select id="site_link_method" class="form-select" aria-label="">
                                             <option selected value="NAV">Navbar</option>
                                             <option value="GALLERY">Tiles</option>
-
                                         </select>
                                     </div>
                                 </div>
@@ -136,7 +153,7 @@
             <div class="col-lg-2 col-md-0 col-sm-0"></div>
         </div>
 
-        <div id="content">
+        <div id="content" class="content_narrow light_shadow">
             <div class="pageRender"></div>
             <div class="linkRender"></div>
             <div class="grid galleryRender" ></div>
