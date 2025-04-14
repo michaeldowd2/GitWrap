@@ -36,18 +36,24 @@ function GetDefaultTheme() {
 }
 
 function EncodeThemeFromUI() {
-    themestring = ''
-    brand_font = document.getElementById('site_brand_font').value
-    themestring += brand_font
-
-    return themestring
+    let themestring = '';
+    let brand_font = document.getElementById('site_brand_font').value;
+    let bg_gradient = document.getElementById('site_bg_gradient').value;
+    let corner_radius = document.getElementById('site_corner_radius').value;
+    let palette_gradient = document.getElementById('palette_gradient').value;
+    // Format: brand|bg|radius|palette
+    themestring += brand_font + '|' + bg_gradient + '|' + corner_radius + '|' + palette_gradient;
+    return themestring;
 }
 
 function DecodeThemeFromUI(theme_string) {
-    theme = {}
-    theme['brand_font_class'] = 'brand_'+theme_string.substring(0, 1)
-
-    return theme
+    let theme = {};
+    let parts = theme_string.split('|');
+    theme['brand_font_class'] = 'brand_' + (parts[0] || '0');
+    theme['bg_gradient'] = parts[1] || 'lightblue';
+    theme['corner_radius'] = parts[2] || 'medium';
+    theme['palette_gradient'] = parts[3] || 'darkgray';
+    return theme;
 }
 
 function getJsonFromUrl(url) {
@@ -257,6 +263,9 @@ function AddAudio(Container, Item, RefreshMasonry) {
 function LoadItemsFromPathLink(Path){
     CurrentPath = Path;
     LoadItemsToPage();
+    if (CurrentTheme) {
+        ApplyTheme(CurrentTheme);
+    }
 }
 
 function RefreshMasonry() {
@@ -268,10 +277,26 @@ function RefreshMasonry() {
 }
 
 function LoadItemsToPage(Push=true,Replace=false) {
-    if (CurrentPath!==''){
-        newURL= window.location.href + '&Path='+CurrentPath
-        if (Push) {history.pushState('','',newURL)}
-        else if (Replace) {history.replaceState('','',newURL)}
+    if (CurrentTheme) {
+        ApplyTheme(CurrentTheme);
+    }
+    if (CurrentPath !== '') {
+        let url = window.location.href;
+        let pathRegex = /([&?])Path=[^&]*/;
+        let hasPath = pathRegex.test(url);
+        let sep = url.indexOf('?') === -1 ? '?' : '&';
+        if (hasPath) {
+            // Replace existing Path param
+            url = url.replace(pathRegex, '$1Path=' + encodeURIComponent(CurrentPath));
+        } else {
+            // Append Path param
+            url = url + sep + 'Path=' + encodeURIComponent(CurrentPath);
+        }
+        if (Push) {
+            history.pushState('', '', url);
+        } else if (Replace) {
+            history.replaceState('', '', url);
+        }
     }
     
     bannerRender = document.getElementsByClassName('carousel-inner')[0]
@@ -410,12 +435,6 @@ function LoadNavbar(site_tree) {
             }
         }
     }
-    //console.log('top level')
-    //console.log(TopPath)
-    //console.log('children')
-    //console.log(children)
-    //console.log('top navs')
-    //console.log(top_navs)
     var html = '<ul class="navbar-nav">'
     top_navs.forEach(function (top_nav) {
         if (children[top_nav].length > 0) {
@@ -487,26 +506,85 @@ function AddChildNavs(key, children, site_tree, level) {
     return html
 }
 
+// --- THEME CONSTANTS ---
+const SITE_BG_GRADIENTS = {
+    mist:    'linear-gradient(90deg,#e9f1fb 0%,#e3f6fd 100%)',
+    silver:  'linear-gradient(90deg,#f4f4f4 0%,#eaeaea 100%)',
+    coral:   'linear-gradient(90deg,#ffe1c6 0%,#ffc6c7 100%)',
+    seafoam: 'linear-gradient(90deg,#e0f7ef 0%,#d0f5e8 100%)',
+    apricot: 'linear-gradient(90deg,#ffe5d0 0%,#ffe0b2 100%)',
+    sky:     'linear-gradient(90deg,#e0f0ff 0%,#c7eafd 100%)',
+    blush:   'linear-gradient(90deg,#f8e1ec 0%,#fad0c4 100%)',
+    white:   '#fff',
+};
+const ITEM_BG_GRADIENTS = {
+    darkgray: 'linear-gradient(135deg,#2d3035 0%,#444851 100%)',
+    blue:     'linear-gradient(135deg,#23374d 0%,#406882 100%)',
+    purple:   'linear-gradient(135deg,#2e294e 0%,#5f4b8b 100%)',
+    coral:    'linear-gradient(135deg,#3b2d2f 0%,#ff6f61 100%)',
+    seafoam:  'linear-gradient(135deg,#234e4e 0%,#43e97b 100%)',
+    apricot:  'linear-gradient(135deg,#4e342e 0%,#ffb347 100%)',
+    sky:      'linear-gradient(135deg,#223a5e 0%,#38a3a5 100%)',
+    blush:    'linear-gradient(135deg,#4b2c3e 0%,#ff5eae 100%)',
+    none:     '#222',
+};
+const CORNER_RADII = {
+    none: '0px',
+    small: '6px',
+    medium: '14px',
+    large: '30px',
+};
+
+/**
+ * Safely get a theme value from a map, fallback to a default if not found.
+ */
+function getThemeValue(map, key, fallback) {
+    return map.hasOwnProperty(key) ? map[key] : fallback;
+}
+
+/**
+ * Apply the selected theme to the site, including background and palette items.
+ * @param {Object} theme - Theme object with bg_gradient, corner_radius, palette_gradient keys.
+ */
+let CurrentTheme = null;
+function ApplyTheme(theme) {
+    // Background gradient
+    const bg = getThemeValue(SITE_BG_GRADIENTS, theme.bg_gradient, SITE_BG_GRADIENTS.white);
+    document.body.style.background = bg;
+    // Corner rounding only for .paletteColour1
+    const radius = getThemeValue(CORNER_RADII, theme.corner_radius, CORNER_RADII.medium);
+    // Apply to all .paletteColour1 divs
+    setTimeout(() => {
+        document.querySelectorAll('.paletteColour1').forEach(div => {
+            div.style.borderRadius = radius;
+            // Palette card gradient
+            const paletteBg = getThemeValue(ITEM_BG_GRADIENTS, theme.palette_gradient, ITEM_BG_GRADIENTS.none);
+            div.style.background = paletteBg;
+        });
+    }, 200);
+}
+
+
 function LoadFromParams() {
-    res = getJsonFromUrl()
-    console.log('URL Params')
-    console.log(res)
-    if ('Repo' in res & res.Repo != '') {
+    res = getJsonFromUrl();
+    console.log('URL Params');
+    console.log(res);
+    if ('Repo' in res && res.Repo != '') {
         document.getElementById('loadBox').style.display = "none";
-        folder_target = 'NAV'
+        folder_target = 'NAV';
         if ('LM' in res) {
-            folder_target = res.LM
+            folder_target = res.LM;
         }
-        GetRepoFiles(res.Repo, folder_target)
-        if ('Title' in res & res.Title != '') {
-            SetSiteBrand(res.Title, res['Theme'])
+        GetRepoFiles(res.Repo, folder_target);
+        if ('Title' in res && res.Title != '') {
+            SetSiteBrand(res.Title, res['Theme']);
+        } else {
+            title = res.Repo.substring(res.Repo.indexOf('/') + 1);
+            SetSiteBrand(title, res['Theme']);
         }
-        else {
-            title = res.Repo.substring(res.Repo.indexOf('/') + 1)
-            SetSiteBrand(title, res['Theme'])
-        }
-    }
-    else { //Showing the site generator
+        CurrentTheme = res['Theme'];
+        ApplyTheme(CurrentTheme);
+    } else { //Showing the site generator
         document.getElementById('content').style.display = "none";
     }
 }

@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang='en'>
 <head>
     <!-- Required meta tags -->
@@ -13,7 +13,10 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.0.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    
     <script src="dist/GitWrap.js"></script>
     <link rel="stylesheet" href="dist/GitWrap.css">
 
@@ -25,14 +28,11 @@
 </head>
 
     <body>
-        <nav class="navbar navbar-expand-lg navbar-light bg-light light_shadow">
-
-          <!--<a class="navbar-brand" href="">Git Wrap</a>
-          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <div class="collapse navbar-collapse" id="main_nav"></div>-->
-
+        <!-- Modern Loader -->
+        <div id="mainLoader" class="main-loader" aria-label="Loading" role="status">
+            <div class="spinner"></div>
+        </div>
+        <nav class="navbar navbar-expand-lg navbar-light light_shadow" role="navigation">
             <div class="container-fluid">
                 <a class="navbar-brand abs" href="#">Gitwrap</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main_nav" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,28 +40,22 @@
                 </button>
                 <div class="collapse navbar-collapse justify-content-center" style="margin-top:44px" id="main_nav"> </div>
             </div>
-
         </nav>
-        
+
         <div id="carouselExampleCaptions " class="carousel slide light_shadow" data-ride="carousel">
-            <ol class="carousel-indicators">
-                <li data-target="#carouselExampleCaptions" data-slide-to="0" class="active"></li>
-                <li data-target="#carouselExampleCaptions" data-slide-to="1"></li>
-                <li data-target="#carouselExampleCaptions" data-slide-to="2"></li>
-            </ol>
-            <div class="carousel-inner">
-                
-            </div>
-            <!--<a class="carousel-control-prev" href="#carouselExampleCaptions" role="button" data-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="sr-only">Previous</span>
-            </a>
-            <a class="carousel-control-next" href="#carouselExampleCaptions" role="button" data-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="sr-only">Next</span>
-            </a>-->
+            <div class="carousel-inner"></div>
         </div>
 
+        <!-- Hero Banner -->
+        <header class="container-fluid py-4 mb-4" style="margin-bottom: 0px!important;background-color:transparent">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-8 text-center pageRender">
+                    <h1 class="display-5 fw-bold mb-2" style="color:#2563eb;">GitWrap</h1>
+                    <p class="lead mb-0">Instantly turn any public GitHub repo into a modern, responsive website.</p>
+                </div>
+            </div>
+        </header>
+        
         <br>
         <div id="loadBox" class="row">
             <div class="col-lg-2 col-md-0 col-sm-0"></div>
@@ -130,6 +124,49 @@
                                         </select>
                                     </div>
                                 </div>
+                                <!-- New Theme Options -->
+                                <div class="form-group row" style="margin-top:12px">
+                                    <label class="col-sm-4 col-form-label">Site Background Gradient</label>
+                                    <div class="col-sm-8">
+                                        <select id="site_bg_gradient" class="form-select" aria-label="">
+                                            <option value="mist" selected>Mist</option>
+                                            <option value="silver">Silver</option>
+                                            <option value="white">White</option>
+                                            <option value="coral">Coral</option>
+                                            <option value="seafoam">Seafoam</option>
+                                            <option value="apricot">Apricot</option>
+                                            <option value="sky">Sky</option>
+                                            <option value="blush">Blush</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row" style="margin-top:12px">
+                                    <label class="col-sm-4 col-form-label">Item Corner Rounding</label>
+                                    <div class="col-sm-8">
+                                        <select id="site_corner_radius" class="form-select" aria-label="">
+                                            <option value="none">None</option>
+                                            <option value="small">Small</option>
+                                            <option value="medium" selected>Medium</option>
+                                            <option value="large">Large</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row" style="margin-top:12px">
+                                    <label class="col-sm-4 col-form-label">Item Background Gradient</label>
+                                    <div class="col-sm-8">
+                                        <select id="palette_gradient" class="form-select" aria-label="">
+                                            <option value="darkgray" selected>Charcoal</option>
+                                            <option value="blue">Deep Ocean</option>
+                                            <option value="purple">Plum Velvet</option>
+                                            <option value="coral">Warm Ember</option>
+                                            <option value="seafoam">Forest Fade</option>
+                                            <option value="apricot">Copper Sand</option>
+                                            <option value="sky">Midnight Teal</option>
+                                            <option value="blush">Berry Wine</option>
+                                            <option value="none">Solid Night</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -146,24 +183,19 @@
                         </div>
                     </div>
                 </div>
-
-
-
             </div>
             <div class="col-lg-2 col-md-0 col-sm-0"></div>
         </div>
 
-        <div id="content" class="content_narrow light_shadow">
-            <div class="pageRender"></div>
+        <main id="content" class="content_narrow light_shadow" tabindex="-1">
             <div class="linkRender"></div>
-            <div class="grid galleryRender" ></div>
-        </div>
+            <div class="grid galleryRender"></div>
+        </main>
+        <br> <br> <br> <br>
 
-        <br>
-        <br>
-        <div class="footer">
-            <small>Powered by <a href="https://michaeldowd2.github.io/GitWrap/">GitWrap</a> a bootstrap wrapper for github repos</small>
-        </div>
+        <footer class="footer" role="contentinfo">
+            <small>Powered by <a href="https://michaeldowd2.github.io/GitWrap/">GitWrap</a> &mdash; a modern Bootstrap wrapper for GitHub repos</small>
+        </footer>
         
     </body>
 
