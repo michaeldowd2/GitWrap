@@ -131,7 +131,6 @@ function ParseTargetFromTitle(Title) {
         end = part.indexOf(']')
         if (end>0) {
             target=part.substring(0,end).toUpperCase()
-            console.log('target: '+target)
             if (target==='GALLERY' || target==='LINKS' || target==='PAGE' || target==='BANNER') {
                 return target;
             }
@@ -530,7 +529,6 @@ function GetRepoFiles(repo, folder_target) {
     CurrentPath = TopPath
     masterURL = 'https://api.github.com/repos/' + JustRepo + '/branches/master'
 
-    console.log('Master URL: ' + masterURL)
     var lastCommitReq = new XMLHttpRequest();
     lastCommitReq.open("GET", masterURL, true);
     lastCommitReq.responseType = "json";
@@ -542,7 +540,6 @@ function GetRepoFiles(repo, folder_target) {
         fileTreeReq.responseType = "json";
         fileTreeReq.onload = function(oEvent) {
             var obj = fileTreeReq.response;
-            console.log('received json for tree')
             treeObject = obj["tree"]
             BuildSiteTree(treeObject, folder_target)
             tree = buildTreeFromFlatJson(SiteTree)
@@ -647,8 +644,6 @@ function LoadFromParams() {
             SetSiteBrand(title, res['Theme']);
         }
         CurrentTheme = res['Theme'];
-        console.log('Applying Theme: ');
-        console.log(CurrentTheme)
         ApplyTheme(CurrentTheme);
     } else { //Showing the site generator
         document.getElementById('content').style.display = "none";
