@@ -16,7 +16,7 @@ const SITE_BG_GRADIENTS = {
     apricot: 'linear-gradient(90deg,#fff3e0 0%,#ffe0e0 100%)', // apricot to very pale pink (lighter)
     sky:     'linear-gradient(90deg,#e0f0ff 0%,#ffb3e6 100%)', // sky blue to soft pink (complementary, more saturated)
     blush:   'linear-gradient(90deg,#f8e1ec 0%,#b3e6ff 100%)', // blush pink to pale blue (complementary, more saturated)
-    white:   '#fff',
+    white:   'linear-gradient(90deg,#fff 0%,#bdbdbd 100%)',
 };
 const ITEM_BG_GRADIENTS = {
     darkgray: 'linear-gradient(135deg,#2d3035 0%,#444851 100%)',
@@ -81,8 +81,8 @@ function DecodeThemeFromUI(theme_string) {
     let theme = {};
     let parts = theme_string.split('|');
     theme['brand_font_class'] = 'brand_' + (parts[0] || '0');
-    theme['bg_gradient'] = parts[1] || 'lightblue';
-    theme['corner_radius'] = parts[2] || 'medium';
+    theme['bg_gradient'] = parts[1] || 'mist';
+    theme['corner_radius'] = parts[2] || 'small';
     theme['palette_gradient'] = parts[3] || 'darkgray';
     return theme;
 }
@@ -614,16 +614,16 @@ function getThemeValue(map, key, fallback) {
  */
 function ApplyTheme(theme) {
     // Background gradient
-    const bg = getThemeValue(SITE_BG_GRADIENTS, theme.bg_gradient, SITE_BG_GRADIENTS.white);
+    const bg = getThemeValue(SITE_BG_GRADIENTS, theme.bg_gradient, SITE_BG_GRADIENTS.mist);
     document.body.style.background = bg;
     // Corner rounding only for .paletteColour1
-    const radius = getThemeValue(CORNER_RADII, theme.corner_radius, CORNER_RADII.medium);
+    const radius = getThemeValue(CORNER_RADII, theme.corner_radius, CORNER_RADII.small);
+    // Palette card gradient
+    const paletteBg = getThemeValue(ITEM_BG_GRADIENTS, theme.palette_gradient, ITEM_BG_GRADIENTS.blue);
     // Apply to all .paletteColour1 divs
     setTimeout(() => {
         document.querySelectorAll('.paletteColour1').forEach(div => {
             div.style.borderRadius = radius;
-            // Palette card gradient
-            const paletteBg = getThemeValue(ITEM_BG_GRADIENTS, theme.palette_gradient, ITEM_BG_GRADIENTS.none);
             div.style.background = paletteBg;
         });
     }, 200);
@@ -647,6 +647,8 @@ function LoadFromParams() {
             SetSiteBrand(title, res['Theme']);
         }
         CurrentTheme = res['Theme'];
+        console.log('Applying Theme: ');
+        console.log(CurrentTheme)
         ApplyTheme(CurrentTheme);
     } else { //Showing the site generator
         document.getElementById('content').style.display = "none";
