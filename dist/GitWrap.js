@@ -1,9 +1,40 @@
-var SiteTree = {};
-var JustRepo = '';
-var TopPath = '';
-var CurrentPath = '';
-var TotalItems = 0;
-var CurrentItems = 0;
+let SiteTree = {};
+let JustRepo = '';
+let TopPath = '';
+let CurrentPath = '';
+let TotalItems = 0;
+let CurrentItems = 0;
+let CurrentTheme = null;
+
+
+// --- THEME CONSTANTS ---
+const SITE_BG_GRADIENTS = {
+    mist:    'linear-gradient(90deg,#e9f1fb 0%,#ffd9b3 100%)', // light blue to light orange (complementary, more saturated)
+    silver:  'linear-gradient(90deg,#f6f6f6 0%,#fffbe0 100%)', // silver to pale yellow (lighter)
+    coral:   'linear-gradient(90deg,#ffe1c6 0%,#aee9ff 100%)', // soft coral to light aqua (complementary, more saturated)
+    seafoam: 'linear-gradient(90deg,#e0f7ef 0%,#f7e0e7 100%)', // mint to soft pink (complementary, lighter)
+    apricot: 'linear-gradient(90deg,#fff3e0 0%,#ffe0e0 100%)', // apricot to very pale pink (lighter)
+    sky:     'linear-gradient(90deg,#e0f0ff 0%,#ffb3e6 100%)', // sky blue to soft pink (complementary, more saturated)
+    blush:   'linear-gradient(90deg,#f8e1ec 0%,#b3e6ff 100%)', // blush pink to pale blue (complementary, more saturated)
+    white:   '#fff',
+};
+const ITEM_BG_GRADIENTS = {
+    darkgray: 'linear-gradient(135deg,#2d3035 0%,#444851 100%)',
+    blue:     'linear-gradient(135deg,#23374d 0%,#406882 100%)',
+    purple:   'linear-gradient(135deg,#2e294e 0%,#5f4b8b 100%)',
+    coral:    'linear-gradient(135deg,#3b2d2f 0%,#ff6f61 100%)',
+    seafoam:  'linear-gradient(135deg,#234e4e 0%,#43e97b 100%)',
+    apricot:  'linear-gradient(135deg,#4e342e 0%,#ffb347 100%)',
+    sky:      'linear-gradient(135deg,#223a5e 0%,#38a3a5 100%)',
+    blush:    'linear-gradient(135deg,#4b2c3e 0%,#ff5eae 100%)',
+    none:     '#222',
+};
+const CORNER_RADII = {
+    none: '0px',
+    small: '6px',
+    medium: '14px',
+    large: '30px',
+};
 
 function createURL() {
     userRepo = document.getElementById('name_inp').value + '/' +
@@ -165,6 +196,7 @@ function BuildSiteTree(tree_object, folder_target) {
             }
         }
     })
+
 }
 
 function AddBannerImage(Container, Item) {
@@ -349,6 +381,140 @@ function CheckItemCountAndRefreshMasonry() {
     }
 }
 
+function buildTreeFromFlatJson(flatSite) {
+    const root = {};
+    for (const key in flatSite) {
+        const item = flatSite[key];
+        if (item.Type !== 'Folder') continue; // Only include folders
+        const parts = item.Path.split('/').filter(Boolean);
+        let node = root;
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
+            if (!node[part])
+                node[part] = { __children: {}, __meta: null };
+            if (i === parts.length - 1)
+                node[part].__meta = item;
+            node = node[part].__children;
+        }
+    }
+    return root;
+}
+
+function createMenu(node, parentPath = '', isRoot = true) {
+    const ul = document.createElement('ul');
+    ul.className = isRoot ? 'navbar-nav flex-row flex-wrap main-navbar' : 'dropdown-menu shadow-sm animate__animated animate__fadeIn';
+
+    for (const key in node) {
+        if (!node.hasOwnProperty(key)) continue;
+        const item = node[key];
+        const meta = item.__meta;
+        const fullPath = meta ? meta.Path : (parentPath ? parentPath + '/' + key : key);
+
+        const li = document.createElement('li');
+        li.className = isRoot ? 'nav-item position-relative d-flex align-items-center' : 'dropdown-item dropdown-submenu position-relative d-flex align-items-center';
+
+        // Main navigation button
+        const btn = document.createElement('button');
+        btn.className = isRoot ? 'nav-link btn btn-link px-3 py-2 text-dark flex-grow-1 text-start' : 'dropdown-item btn btn-link text-dark flex-grow-1 text-start';
+        btn.textContent = meta ? (meta.Title || key) : key;
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            LoadItemsFromPathLink(fullPath);
+            // Close all open dropdown menus
+            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+                menu.style.display = 'none';
+            });
+            // Reset all chevrons
+            document.querySelectorAll('.expander-icon').forEach(icon => {
+                icon.style.transform = '';
+            });
+        };
+
+        li.appendChild(btn);
+
+        // Expand/collapse button for items with children
+        const hasChildren = Object.keys(item.__children).length > 0;
+        let childUl = null;
+        if (hasChildren) {
+            // Expander button (chevron)
+            const expanderBtn = document.createElement('button');
+            expanderBtn.className = 'expander-btn btn btn-link p-0 ms-2';
+            expanderBtn.setAttribute('aria-label', 'Expand submenu');
+            expanderBtn.setAttribute('type', 'button');
+            expanderBtn.setAttribute('tabindex', '-1');
+            expanderBtn.innerHTML = '<span class="expander-icon" style="display:inline-block;transition:transform 0.2s;"><svg width="16" height="16" fill="currentColor"><path d="M4.646 6.646a.5.5 0 0 1 .708 0L8 9.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z"/></svg></span>';
+            //expanderBtn.style.background = 'none';
+            //expanderBtn.style.border = 'none';
+            //expanderBtn.style.outline = 'none'; // Remove outline on click/focus
+
+            expanderBtn.onclick = function(e) {
+                e.stopPropagation();
+                // Close any open sibling submenus
+                Array.from(li.parentNode.children).forEach(sibling => {
+                    if (sibling !== li) {
+                        const openMenu = sibling.querySelector('.dropdown-menu.show');
+                        if (openMenu) {
+                            openMenu.classList.remove('show');
+                            openMenu.style.display = 'none';
+                            // Also reset chevron
+                            const icon = sibling.querySelector('.expander-icon');
+                            if (icon) icon.style.transform = '';
+                        }
+                    }
+                });
+                if (!childUl) {
+                    childUl = createMenu(item.__children, fullPath, false);
+                    childUl.classList.add('show', 'submenu-below-expander');
+                    li.appendChild(childUl); // Attach as child of li for proper nesting
+                } else {
+                    childUl.classList.add('show');
+                    childUl.style.display = '';
+                }
+                expanderBtn.querySelector('.expander-icon').style.transform = 'rotate(180deg)';
+                // Position submenu right-aligned with expanderBtn
+                    positionSubmenuRightAligned(expanderBtn, childUl);
+                
+            };
+
+            // Helper to position submenu below expanderBtn
+            // This function is defined below createMenu
+
+
+            li.appendChild(expanderBtn);
+
+        }
+
+        ul.appendChild(li);
+    }
+
+    // Only add the global click handler once for the root menu
+    if (isRoot && !window._menuOutsideClickHandlerAdded) {
+        window._menuOutsideClickHandlerAdded = true;
+        document.addEventListener('click', function(e) {
+            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+                menu.style.display = 'none';
+            });
+            document.querySelectorAll('.expander-icon').forEach(icon => {
+                icon.style.transform = '';
+            });
+        });
+    }
+    return ul;
+}
+
+// Helper to position submenu right-aligned with expander button
+function positionSubmenuRightAligned(button, submenu) {
+    submenu.style.position = 'absolute';
+    submenu.style.right = '0';
+    submenu.style.left = 'auto';
+    submenu.style.top = '48px';// (button.offsetTop + button.offsetHeight) + 'px';
+    submenu.style.minWidth = '220px';
+    submenu.style.zIndex = 1000;
+    submenu.style.background = '#fff';
+}
+
 function GetRepoFiles(repo, folder_target) {
     JustRepo = repo
     repoArray = repo.split('/')
@@ -379,8 +545,13 @@ function GetRepoFiles(repo, folder_target) {
             console.log('received json for tree')
             treeObject = obj["tree"]
             BuildSiteTree(treeObject, folder_target)
+            tree = buildTreeFromFlatJson(SiteTree)
+
+            // 2. Render menu into a target element
+            const navContainer = document.getElementById('second_nav'); // Or another target
+            navContainer.appendChild(createMenu(tree));
+
             LoadItemsToPage(Push = false, Replace = true)
-            LoadNavbar(SiteTree)
             return;
         };
         fileTreeReq.send();
@@ -407,82 +578,6 @@ function SetSiteBrand(title, theme) {
     titleEl.classList.add(theme['brand_font_class']);
 }
 
-function LoadNavbar(site_tree) {
-    var top_navs = []
-    var children = {}
-    for (const [key, value] of Object.entries(site_tree)) {
-        var trimmed_key = key
-        if (key.indexOf(TopPath) == 0) {
-            trimmed_key = trimmed_key.replace(TopPath, '')
-        }
-        if (value.Target == 'NAV') {
-            parts = trimmed_key.split('/')
-            if (parts.length > 1) {
-                parent_key = parts.slice(0, parts.length - 1).join('/')
-
-                if (TopPath != '') {
-                    parent_key = TopPath + parent_key
-                }
-
-                if (!(parent_key in children)) {
-                    children[parent_key] = []
-                }
-                children[parent_key].push(key)
-            }
-            else {
-                children[key] = []
-                top_navs.push(key)
-            }
-        }
-    }
-    var html = '<ul class="navbar-nav">'
-    top_navs.forEach(function (top_nav) {
-        if (children[top_nav].length > 0) {
-            html += '<li class="nav-item dropdown">'
-            html += '<div class="dropdown-item" onclick="LoadItemsFromPathLink(\'' + top_nav + '/\')">' + site_tree[top_nav].Title +'</div>'
-            html += '<a class="nav-link dropdown-toggle dropdown-item expander_nav" href="#" data-bs-toggle="dropdown"></a>'
-        }
-        else {
-            html += '<li class="nav-item">'
-            html += '<div class="dropdown-item" onclick="LoadItemsFromPathLink(\'' + top_nav + '/\')">' + site_tree[top_nav].Title + '</div>'
-        }
-        html += AddChildNavs(top_nav, children, site_tree, 0)
-        html += '</li>'
-    })
-    html += '</ul>'
-    document.getElementById('main_nav').innerHTML = html;
-
-    if (window.innerWidth < 992) {
-
-        // close all inner dropdowns when parent is closed
-        document.querySelectorAll('.navbar .dropdown').forEach(function (everydropdown) {
-            everydropdown.addEventListener('hidden.bs.dropdown', function () {
-                // after dropdown is hidden, then find all submenus
-                this.querySelectorAll('.submenu').forEach(function (everysubmenu) {
-                    // hide every submenu as well
-                    everysubmenu.style.display = 'none';
-                });
-            })
-        });
-
-        document.querySelectorAll('.dropdown-menu a').forEach(function (element) {
-            element.addEventListener('click', function (e) {
-                let nextEl = this.nextElementSibling;
-                if (nextEl && nextEl.classList.contains('submenu')) {
-                    // prevent opening link if link needs to open dropdown
-                    e.preventDefault();
-                    if (nextEl.style.display == 'block') {
-                        nextEl.style.display = 'none';
-                    } else {
-                        nextEl.style.display = 'block';
-                    }
-
-                }
-            });
-        })
-    }
-}
-
 function AddChildNavs(key, children, site_tree, level) {
     html = '';
     if (key in children) {
@@ -506,35 +601,6 @@ function AddChildNavs(key, children, site_tree, level) {
     return html
 }
 
-// --- THEME CONSTANTS ---
-const SITE_BG_GRADIENTS = {
-    mist:    'linear-gradient(90deg,#e9f1fb 0%,#e3f6fd 100%)',
-    silver:  'linear-gradient(90deg,#f4f4f4 0%,#eaeaea 100%)',
-    coral:   'linear-gradient(90deg,#ffe1c6 0%,#ffc6c7 100%)',
-    seafoam: 'linear-gradient(90deg,#e0f7ef 0%,#d0f5e8 100%)',
-    apricot: 'linear-gradient(90deg,#ffe5d0 0%,#ffe0b2 100%)',
-    sky:     'linear-gradient(90deg,#e0f0ff 0%,#c7eafd 100%)',
-    blush:   'linear-gradient(90deg,#f8e1ec 0%,#fad0c4 100%)',
-    white:   '#fff',
-};
-const ITEM_BG_GRADIENTS = {
-    darkgray: 'linear-gradient(135deg,#2d3035 0%,#444851 100%)',
-    blue:     'linear-gradient(135deg,#23374d 0%,#406882 100%)',
-    purple:   'linear-gradient(135deg,#2e294e 0%,#5f4b8b 100%)',
-    coral:    'linear-gradient(135deg,#3b2d2f 0%,#ff6f61 100%)',
-    seafoam:  'linear-gradient(135deg,#234e4e 0%,#43e97b 100%)',
-    apricot:  'linear-gradient(135deg,#4e342e 0%,#ffb347 100%)',
-    sky:      'linear-gradient(135deg,#223a5e 0%,#38a3a5 100%)',
-    blush:    'linear-gradient(135deg,#4b2c3e 0%,#ff5eae 100%)',
-    none:     '#222',
-};
-const CORNER_RADII = {
-    none: '0px',
-    small: '6px',
-    medium: '14px',
-    large: '30px',
-};
-
 /**
  * Safely get a theme value from a map, fallback to a default if not found.
  */
@@ -546,7 +612,6 @@ function getThemeValue(map, key, fallback) {
  * Apply the selected theme to the site, including background and palette items.
  * @param {Object} theme - Theme object with bg_gradient, corner_radius, palette_gradient keys.
  */
-let CurrentTheme = null;
 function ApplyTheme(theme) {
     // Background gradient
     const bg = getThemeValue(SITE_BG_GRADIENTS, theme.bg_gradient, SITE_BG_GRADIENTS.white);
@@ -563,7 +628,6 @@ function ApplyTheme(theme) {
         });
     }, 200);
 }
-
 
 function LoadFromParams() {
     res = getJsonFromUrl();
@@ -588,7 +652,6 @@ function LoadFromParams() {
         document.getElementById('content').style.display = "none";
     }
 }
-
 
 window.onpopstate = function (event) {
     getJsonFromUrl()

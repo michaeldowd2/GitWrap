@@ -4,17 +4,17 @@
     color: #888;
     border-top: 1px solid #e5e7eb;
     text-align: center;
-    padding: 2rem 0 1.5rem 0;
+    padding: 16px;
     font-size: 0.96rem;
-    margin-top: 3rem;
     position:fixed;
     bottom:0;
     width:100%;
+    box-shadow: 0px 0px 10px #ababab;
 }
 
 :root {
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
+    --primary: #3aa6b9;
+    --primary-hover: #11b3cf;
     --bg-main: #f8fafc;
     --bg-card: #fff;
     --bg-header: #f1f5f9;
@@ -37,13 +37,13 @@ body {
 }
 
 .navbar-brand, .navbar-brand.abs {
+    padding-top: 0px;
+    padding-bottom: 0px;
     font-weight: 600;
+    margin-left:16px;
     letter-spacing: 0.5px;
     font-size: 1.4rem;
     color: var(--primary) !important;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
     text-align: center;
     top:2px;
 }
@@ -192,7 +192,6 @@ body {
     box-shadow: 0px 5px 10px #ababab;
 }
 
-
 /*brand classes*/
 .brand_0 {
     font-family: 'Syne Mono', monospace;
@@ -230,6 +229,8 @@ body {
     display: flex;
     flex-direction: row;
     align-items: center;
+    justify-content: flex-end;
+    width: 100%;
 }
 .navbar-nav .nav-item {
     display: flex;
@@ -300,10 +301,114 @@ body {
 /* ============ desktop view .end// ============ */
 
 /* ============ small devices ============ */
+	
+
+
+
+
+/* Main navbar styles */
+.main-navbar {
+    background: #fff;
+    margin: 0;
+    transition: box-shadow 0.2s;
+}
+
+.main-navbar .nav-item {
+    margin-right: 1rem;
+    position: relative;
+}
+
+.main-navbar .nav-link {
+    color: #2563eb;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.main-navbar .nav-link:hover, .main-navbar .nav-link:focus {
+    background: #e0e7ff;
+    color: #1e293b;
+    box-shadow: 0 4px 24px 0 rgba(37, 99, 235, 0.09);
+}
+
+.dropdown-menu {
+    min-width: 220px;
+    border-radius: 0px;
+    box-shadow: 0 6px 24px 0 rgba(30, 41, 59, 0.12);
+    animation: fadeInDown 0.25s;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-10px);}
+    to { opacity: 1; transform: translateY(0);}
+}
+
+/* Responsive styles */
 @media (max-width: 991px) {
-    .dropdown-menu .dropdown-menu {
-        margin-left: 0.7rem;
-        margin-right: 0.7rem;
-        margin-bottom: .5rem;
+    .main-navbar {
+        flex-direction: column !important;
+        padding: 0.5rem 0;
     }
-}	
+    .main-navbar .nav-item {
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+    }
+    .dropdown-menu {
+        position: static !important;
+        box-shadow: none;
+    }
+}
+
+.navbar-toggler {
+    margin-left:8px;
+    margin-right:8px;
+}
+
+.expander-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.expander-btn:focus, .expander-btn:active {
+    outline: none !important;
+    box-shadow: none !important;
+}
+.dropdown-menu {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.dropdown-menu.show {
+    display: block;
+    opacity: 1;
+}
+@media (max-width: 991px) {
+    .main-navbar {
+        flex-direction: column !important;
+        padding: 0.5rem 0;
+    }
+    .main-navbar .nav-item {
+        margin-right: 0;
+    }
+    .submenu-below-expander {
+        position: absolute;
+        right: 0;
+        left: auto;
+        min-width: 220px;
+        background: #fff;
+        border-radius: 0px;
+        animation: fadeInDown 0.25s;
+        z-index: 1000;
+        position: absolute !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: max-content !important;
+        min-width: 160px !important;
+        max-width: 95vw !important;
+    }
+    .dropdown-item {
+        position: relative;
+    }
+}
