@@ -16,12 +16,6 @@ http://michaeldowd.info
 
 This is my own content site. To set it up I went to the GitWrap generator, entered my username and the repo hosting my content and clicked build. I then pasted the generated URL into the forwarding section of my domain hosting.
 
-### 2. URL Forwarding -> Gitwrap generated URL -> public github repo -> specific folder in repo
-
-http://projecternest.com
-
-Same as above but pointing to a specific folder in the same repo. This way I can just update the content in one place, commit and push changes and both sites are automatically updated
-
 ## Where?
 To dress up your own repo, go here: [GitWrap](https://michaeldowd2.github.io/GitWrap/)
 
