@@ -374,6 +374,10 @@ function logoProbeUrls(pageUrl) {
             var dir = '/' + parts.slice(0, parts.length - depth).join('/') + '/';
             names.forEach(function(name) { urls.push(parsed.origin + dir + name); });
         }
+        // Last resort is the site's own icon. github.com blocks reading the
+        // page, but its favicon still loads in an image tag.
+        urls.push(parsed.origin + '/apple-touch-icon.png');
+        urls.push(parsed.origin + '/favicon.ico');
     } catch (e) {}
     return urls;
 }
