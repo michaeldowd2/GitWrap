@@ -128,9 +128,9 @@
                                     <label class="col-sm-4 col-form-label">Item Corner Rounding</label>
                                     <div class="col-sm-8">
                                         <select id="site_corner_radius" class="form-select" aria-label="">
-                                            <option value="none">None</option>
+                                            <option value="none" selected>None</option>
                                             <option value="small">Small</option>
-                                            <option value="medium" selected>Medium</option>
+                                            <option value="medium">Medium</option>
                                             <option value="large">Large</option>
                                         </select>
                                     </div>
@@ -201,10 +201,14 @@
             <div class="col-lg-2 col-md-0 col-sm-0"></div>
         </div>
 
-        <main id="content" class="content_narrow light_shadow" tabindex="-1">
-            <div class="linkRender"></div>
-            <div class="grid galleryRender"></div>
-        </main>
+        <div class="container-fluid">
+            <div class="row justify-content-center">
+                <main id="content" class="col-lg-8 content_narrow light_shadow" tabindex="-1">
+                    <div class="linkRender"></div>
+                    <div class="grid galleryRender"></div>
+                </main>
+            </div>
+        </div>
         <br> <br> <br> <br>
 
         <footer class="footer" role="contentinfo">

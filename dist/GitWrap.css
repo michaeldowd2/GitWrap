@@ -105,10 +105,8 @@ body {
 
 .content_narrow {
     background: #fff;
-
-    max-width: 1100px;
-    margin: 0 auto;
-    background: #fff;
+    /* Width matches .pageRender (col-lg-8 in the same container-fluid grid) */
+    margin: 0;
     border-radius: var(--radius-main);
     box-shadow: var(--shadow-main);
 }
@@ -411,4 +409,119 @@ body {
     .dropdown-item {
         position: relative;
     }
+}
+
+.procsong-embed {
+    min-width: 0;
+}
+
+/* Bound library + player like folder/URL tiles; no hover scale (interactive controls). */
+.paletteColour1.procsong-panel {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    --panel: rgba(0, 0, 0, 0.28);
+    --line: rgba(255, 255, 255, 0.18);
+    --text: #f3f3f3;
+    --muted: rgba(255, 255, 255, 0.65);
+    --accent: #e8e8e8;
+    --on-accent: #1a1a1a;
+    --input-bg: rgba(0, 0, 0, 0.35);
+    --transport-play: #5ee0ff;
+    --transport-load: #e2b15a;
+    --error: #e8a090;
+    --secondary: #5ee0ff;
+    --standard: #c9a0ff;
+    --silent: #6d6860;
+}
+
+.paletteColour1.procsong-panel:hover {
+    filter: none;
+    transform: none;
+    box-shadow: none;
+}
+
+.procsong-panel > h1 {
+    margin: 0 0 4px;
+    font-size: 1.75rem;
+    color: #fff;
+}
+
+.procsong-panel > small {
+    display: block;
+    margin: 0 0 8px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.procsong-panel .procsong-library,
+.procsong-panel .procsong-player {
+    width: 100%;
+    min-width: 0;
+}
+
+.procsong-status {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.9rem;
+}
+
+.procsong-status.is-error {
+    color: #e8a090;
+}
+
+.wavlib-embed {
+    min-width: 0;
+}
+
+.paletteColour1.wavlib-panel {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    --panel: rgba(0, 0, 0, 0.28);
+    --line: rgba(255, 255, 255, 0.18);
+    --text: #f3f3f3;
+    --muted: rgba(255, 255, 255, 0.65);
+    --accent: #e8e8e8;
+    --on-accent: #1a1a1a;
+    --input-bg: rgba(0, 0, 0, 0.35);
+    --transport-play: #5ee0ff;
+    --transport-load: #e2b15a;
+    --error: #e8a090;
+    --secondary: #5ee0ff;
+}
+
+.paletteColour1.wavlib-panel:hover {
+    filter: none;
+    transform: none;
+    box-shadow: none;
+}
+
+.wavlib-panel > h1 {
+    margin: 0 0 4px;
+    font-size: 1.75rem;
+    color: #fff;
+}
+
+.wavlib-panel > small {
+    display: block;
+    margin: 0 0 8px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.wavlib-panel .wav-library,
+.wavlib-panel .wav-player-host {
+    width: 100%;
+    min-width: 0;
+}
+
+.wavlib-status-msg {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.9rem;
+}
+
+.wavlib-status-msg.is-error {
+    color: #e8a090;
 }

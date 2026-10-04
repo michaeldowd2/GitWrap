@@ -1,10 +1,15 @@
 let SiteTree = {};
 let JustRepo = '';
+let RepoBranch = 'master';
 let TopPath = '';
 let CurrentPath = '';
 let TotalItems = 0;
 let CurrentItems = 0;
 let CurrentTheme = null;
+let procsongScriptsPromise = null;
+let procsongInstanceId = 0;
+let wavScriptsPromise = null;
+let wavInstanceId = 0;
 
 
 // --- THEME CONSTANTS ---
@@ -82,7 +87,7 @@ function DecodeThemeFromUI(theme_string) {
     let parts = theme_string.split('|');
     theme['brand_font_class'] = 'brand_' + (parts[0] || '0');
     theme['bg_gradient'] = parts[1] || 'mist';
-    theme['corner_radius'] = parts[2] || 'small';
+    theme['corner_radius'] = parts[2] || 'none';
     theme['palette_gradient'] = parts[3] || 'darkgray';
     return theme;
 }
@@ -161,33 +166,42 @@ function ParseTitleAndSubtitle(Title, Item) {
 function BuildSiteTree(tree_object, folder_target) {
     tree_object.forEach(function(item,index) {
         if (TopPath ==='' || item.path.indexOf(TopPath)===0){
-            //URL
-            url = item['url']
+            // Do not assign to the global name URL — that overwrites window.URL
+            // (the constructor) and breaks Dropbox URL rewriting + createObjectURL.
+            var rawUrl = item['url']
             if (item["type"]=='blob') {
-                URL = 'https://raw.githubusercontent.com/' + JustRepo + '/master/'+item.path
+                rawUrl = 'https://raw.githubusercontent.com/' + JustRepo + '/' + RepoBranch + '/'+item.path
             }
             title = item.path.substring(item.path.lastIndexOf('/')+1)
             target = ParseTargetFromTitle(title); 
             newItem = null;
             if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.JPG') || item["path"].toUpperCase().includes('.PNG'))) {                
                 if (target===null) {target='GALLERY';}
-                newItem = {Type: "Image", Path: item.path, URL: URL, Target:target }
+                newItem = {Type: "Image", Path: item.path, URL: rawUrl, Target:target }
             }
-            else if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.MP3'))) {
+            else if (item["type"]=='blob' && item["path"].toUpperCase().includes('.PRCSLIB')) {
                 if (target===null) {target='GALLERY';}
-                newItem = {Type: "Audio", Path: item.path, URL: URL, Target:target }
+                newItem = {Type: "ProcsongLibrary", Path: item.path, URL: rawUrl, Target:target }
+            }
+            else if (item["type"]=='blob' && item["path"].toUpperCase().includes('.WAVLIB')) {
+                if (target===null) {target='GALLERY';}
+                newItem = {Type: "WavLibrary", Path: item.path, URL: rawUrl, Target:target }
+            }
+            else if (item["type"]=='blob' && (/\.MP3(\b|$)/i.test(item["path"]) || /\.WAV(\b|$)/i.test(item["path"]))) {
+                if (target===null) {target='GALLERY';}
+                newItem = {Type: "Audio", Path: item.path, URL: rawUrl, Target:target }
             }
             else if (item["type"]=='blob' && (item["path"].toUpperCase().includes('.HTML')) && !item["path"].toUpperCase().includes('INDEX.HTML')) {
                 if (target===null) {target='PAGE';}
-                newItem = {Type: "Html", Path: item.path, URL: URL, Target:target }
+                newItem = {Type: "Html", Path: item.path, URL: rawUrl, Target:target }
             }
             else if (item["type"]=='blob' && item["path"].toUpperCase().includes('.URL')) {
                 if (target === null) { target = folder_target;}
-                newItem = {Type: "Url", Path: item.path, URL: URL, Target:target }
+                newItem = {Type: "Url", Path: item.path, URL: rawUrl, Target:target }
             }
             else if (item["type"]=='tree'){
                 if (target === null) { target = folder_target;}
-                newItem = {Type: "Folder", Path:item.path+'/', URL: URL, Target:target }
+                newItem = {Type: "Folder", Path:item.path+'/', URL: rawUrl, Target:target }
             }
             if (newItem!==null) {
                 newItem = ParseTitleAndSubtitle(title,newItem);
@@ -276,19 +290,247 @@ function AddImage(Container, Item, RefreshMasonry) {
 }
 
 function AddAudio(Container, Item, RefreshMasonry) {
+    var pathUpper = (Item.Path || Item.URL || '').toUpperCase();
+    var mime = pathUpper.indexOf('.WAV') >= 0 ? 'audio/wav' : 'audio/mpeg';
     Container.innerHTML += `
     <div class = "grid-item animated fadeIn col-lg-4 col-md-6 col-sm-12">
         <div class = "col-sm-12">
-            <h5>` + Item.Title + `</p>
+            <h5>` + Item.Title + `</h5>
         </div>
         <div class = "col-sm-12">
             <audio controls>
-                <source src = "` + Item.URL + `" type = "audio/mpeg">
+                <source src = "` + Item.URL + `" type = "` + mime + `">
                 Your browser does not support the audio element
             </audio>
         </div>
      </div>`
      CheckItemCountAndRefreshMasonry()
+}
+
+function gitwrapAssetBaseUrl() {
+    var scripts = document.getElementsByTagName('script');
+    for (var i = 0; i < scripts.length; i++) {
+        var src = scripts[i].src || '';
+        if (src.indexOf('GitWrap.js') !== -1) {
+            return src.replace(/GitWrap\.js(?:\?.*)?$/, '');
+        }
+    }
+    return 'dist/';
+}
+
+function loadScriptOnce(src) {
+    return new Promise(function(resolve, reject) {
+        var existing = document.querySelector('script[data-gitwrap-src="' + src + '"]');
+        if (existing) {
+            if (existing.getAttribute('data-loaded') === '1') {
+                resolve();
+                return;
+            }
+            existing.addEventListener('load', function() { resolve(); });
+            existing.addEventListener('error', function() { reject(new Error('Failed to load ' + src)); });
+            return;
+        }
+        var script = document.createElement('script');
+        script.src = src;
+        script.async = false;
+        script.setAttribute('data-gitwrap-src', src);
+        script.onload = function() {
+            script.setAttribute('data-loaded', '1');
+            resolve();
+        };
+        script.onerror = function() {
+            reject(new Error('Failed to load ' + src));
+        };
+        document.head.appendChild(script);
+    });
+}
+
+function ensureProcsongScripts() {
+    if (procsongScriptsPromise) {
+        return procsongScriptsPromise;
+    }
+    procsongScriptsPromise = loadScriptOnce('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js')
+        .then(function() {
+            return loadScriptOnce('https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js');
+        })
+        .then(function() {
+            return loadScriptOnce('https://cdn.jsdelivr.net/gh/michaeldowd2/procsong@main/players/web/proc_song.js');
+        })
+        .then(function() {
+            return loadScriptOnce('https://cdn.jsdelivr.net/gh/michaeldowd2/procsong@main/players/web/proc_library.js');
+        })
+        .catch(function(err) {
+            procsongScriptsPromise = null;
+            throw err;
+        });
+    return procsongScriptsPromise;
+}
+
+function ensureWavScripts() {
+    if (wavScriptsPromise) {
+        return wavScriptsPromise;
+    }
+    var base = gitwrapAssetBaseUrl();
+    // Cache-bust so local file:// / refresh picks up component edits.
+    var bust = '?v=20261004c';
+    wavScriptsPromise = loadScriptOnce(base + 'components/wav_player.js' + bust)
+        .then(function() {
+            return loadScriptOnce(base + 'components/wav_library.js' + bust);
+        })
+        .catch(function(err) {
+            wavScriptsPromise = null;
+            throw err;
+        });
+    return wavScriptsPromise;
+}
+
+function AddProcsongLibrary(Container, Item) {
+    procsongInstanceId += 1;
+    var id = procsongInstanceId;
+    var libraryId = 'procsong-library-' + id;
+    var playerId = 'procsong-player-' + id;
+
+    var wrapper = document.createElement('div');
+    wrapper.className = 'grid-item animated fadeIn col-lg-8 col-md-12 col-sm-12 procsong-embed';
+
+    var panel = document.createElement('div');
+    panel.className = 'paletteColour1 procsong-panel';
+
+    var titleEl = document.createElement('h1');
+    titleEl.textContent = Item.Title || 'Procsong';
+    panel.appendChild(titleEl);
+
+    if (Item.Subtitle) {
+        var subtitleEl = document.createElement('small');
+        subtitleEl.textContent = Item.Subtitle;
+        panel.appendChild(subtitleEl);
+    }
+
+    var libraryEl = document.createElement('div');
+    libraryEl.id = libraryId;
+    libraryEl.className = 'procsong-library';
+
+    var playerEl = document.createElement('div');
+    playerEl.id = playerId;
+    playerEl.className = 'procsong-player';
+
+    var statusEl = document.createElement('p');
+    statusEl.className = 'procsong-status';
+    statusEl.textContent = 'Loading procsong…';
+
+    panel.appendChild(statusEl);
+    panel.appendChild(libraryEl);
+    panel.appendChild(playerEl);
+    wrapper.appendChild(panel);
+    Container.appendChild(wrapper);
+
+    if (CurrentTheme) {
+        ApplyTheme(CurrentTheme);
+    }
+
+    ensureProcsongScripts()
+        .then(function() {
+            statusEl.remove();
+            var player = new ProcsongPlayer({
+                target: playerEl,
+                heading: '',
+            });
+            player.initialise();
+            var library = new ProcsongLibrary({
+                target: libraryEl,
+                player: playerEl,
+                library: Item.URL,
+                heading: '',
+            });
+            return library.initialise();
+        })
+        .then(function() {
+            CheckItemCountAndRefreshMasonry();
+            // Layout may change after library rows render
+            setTimeout(RefreshMasonry, 100);
+        })
+        .catch(function(err) {
+            if (!statusEl.isConnected) {
+                panel.insertBefore(statusEl, libraryEl);
+            }
+            statusEl.textContent = 'Failed to load procsong: ' + (err && err.message ? err.message : err);
+            statusEl.classList.add('is-error');
+            CheckItemCountAndRefreshMasonry();
+        });
+}
+
+function AddWavLibrary(Container, Item) {
+    wavInstanceId += 1;
+    var id = wavInstanceId;
+    var libraryId = 'wav-library-' + id;
+    var playerId = 'wav-player-' + id;
+
+    var wrapper = document.createElement('div');
+    wrapper.className = 'grid-item animated fadeIn col-lg-8 col-md-12 col-sm-12 wavlib-embed';
+
+    var panel = document.createElement('div');
+    panel.className = 'paletteColour1 wavlib-panel';
+
+    var titleEl = document.createElement('h1');
+    titleEl.textContent = Item.Title || 'Audio';
+    panel.appendChild(titleEl);
+
+    if (Item.Subtitle) {
+        var subtitleEl = document.createElement('small');
+        subtitleEl.textContent = Item.Subtitle;
+        panel.appendChild(subtitleEl);
+    }
+
+    var libraryEl = document.createElement('div');
+    libraryEl.id = libraryId;
+    libraryEl.className = 'wav-library';
+
+    var playerEl = document.createElement('div');
+    playerEl.id = playerId;
+    playerEl.className = 'wav-player-host';
+
+    var statusEl = document.createElement('p');
+    statusEl.className = 'wavlib-status-msg';
+    statusEl.textContent = 'Loading audio library…';
+
+    panel.appendChild(statusEl);
+    panel.appendChild(libraryEl);
+    panel.appendChild(playerEl);
+    wrapper.appendChild(panel);
+    Container.appendChild(wrapper);
+
+    if (CurrentTheme) {
+        ApplyTheme(CurrentTheme);
+    }
+
+    ensureWavScripts()
+        .then(function() {
+            statusEl.remove();
+            var player = new WavPlayer({
+                target: playerEl,
+                heading: '',
+            });
+            player.initialise();
+            var library = new WavLibrary({
+                target: libraryEl,
+                player: playerEl,
+                library: Item.URL,
+                heading: '',
+            });
+            return library.initialise();
+        })
+        .then(function() {
+            CheckItemCountAndRefreshMasonry();
+            setTimeout(RefreshMasonry, 100);
+        })
+        .catch(function(err) {
+            if (!statusEl.isConnected) {
+                panel.insertBefore(statusEl, libraryEl);
+            }
+            statusEl.textContent = 'Failed to load audio library: ' + (err && err.message ? err.message : err);
+            statusEl.classList.add('is-error');
+            CheckItemCountAndRefreshMasonry();
+        });
 }
 
 function LoadItemsFromPathLink(Path){
@@ -356,6 +598,8 @@ function LoadItemsToPage(Push=true,Replace=false) {
             else if (item.Type==='Image') {AddImage(targetContainer, item);}
             else if (item["Type"]=='Folder') {AddFolder(targetContainer, item);}
             else if (item["Type"]=='Audio') {AddAudio(targetContainer, item);}
+            else if (item["Type"]=='ProcsongLibrary') {AddProcsongLibrary(targetContainer, item);}
+            else if (item["Type"]=='WavLibrary') {AddWavLibrary(targetContainer, item);}
             else if (item["Type"]=='Html') {AddHTML(targetContainer, item);}
             else if (item["Type"]=='Url') {AddURL(targetContainer, item);}
         }
@@ -514,6 +758,59 @@ function positionSubmenuRightAligned(button, submenu) {
     submenu.style.background = '#fff';
 }
 
+function LoadRepoTreeFromBranch(folder_target, branch, fallbacks) {
+    var branchURL = 'https://api.github.com/repos/' + JustRepo + '/branches/' + branch;
+    var lastCommitReq = new XMLHttpRequest();
+    lastCommitReq.open("GET", branchURL, true);
+    lastCommitReq.responseType = "json";
+    lastCommitReq.onload = function() {
+        if (lastCommitReq.status !== 200 || !lastCommitReq.response || !lastCommitReq.response.commit) {
+            if (fallbacks && fallbacks.length) {
+                LoadRepoTreeFromBranch(folder_target, fallbacks[0], fallbacks.slice(1));
+                return;
+            }
+            console.error('Failed to load branch', branch, lastCommitReq.status);
+            return;
+        }
+        RepoBranch = branch;
+        var obj = lastCommitReq.response;
+        var treeURL = obj["commit"]["commit"]["tree"]["url"] + '?recursive=1';
+        var fileTreeReq = new XMLHttpRequest();
+        fileTreeReq.open("GET", treeURL, true);
+        fileTreeReq.responseType = "json";
+        fileTreeReq.onload = function() {
+            var treeObj = fileTreeReq.response;
+            treeObject = treeObj["tree"];
+            BuildSiteTree(treeObject, folder_target);
+            tree = buildTreeFromFlatJson(SiteTree);
+
+            const navContainer = document.getElementById('second_nav');
+            navContainer.appendChild(createMenu(tree));
+
+            LoadItemsToPage(Push = false, Replace = true);
+        };
+        fileTreeReq.send();
+    };
+    lastCommitReq.onerror = function() {
+        if (fallbacks && fallbacks.length) {
+            LoadRepoTreeFromBranch(folder_target, fallbacks[0], fallbacks.slice(1));
+            return;
+        }
+        console.error('Failed to load branch', branch);
+    };
+    lastCommitReq.send();
+}
+
+function branchFallbacks(preferred) {
+    var options = [preferred, 'main', 'master'];
+    var seen = {};
+    return options.filter(function(name) {
+        if (!name || seen[name]) return false;
+        seen[name] = true;
+        return true;
+    });
+}
+
 function GetRepoFiles(repo, folder_target) {
     JustRepo = repo
     repoArray = repo.split('/')
@@ -527,33 +824,23 @@ function GetRepoFiles(repo, folder_target) {
     }
 
     CurrentPath = TopPath
-    masterURL = 'https://api.github.com/repos/' + JustRepo + '/branches/master'
 
-    var lastCommitReq = new XMLHttpRequest();
-    lastCommitReq.open("GET", masterURL, true);
-    lastCommitReq.responseType = "json";
-    lastCommitReq.onload = function(oEvent) {
-        var obj = lastCommitReq.response;
-        treeURL=obj["commit"]["commit"]["tree"]["url"] + '?recursive=1'
-        var fileTreeReq = new XMLHttpRequest();
-        fileTreeReq.open("GET", treeURL, true);
-        fileTreeReq.responseType = "json";
-        fileTreeReq.onload = function(oEvent) {
-            var obj = fileTreeReq.response;
-            treeObject = obj["tree"]
-            BuildSiteTree(treeObject, folder_target)
-            tree = buildTreeFromFlatJson(SiteTree)
-
-            // 2. Render menu into a target element
-            const navContainer = document.getElementById('second_nav'); // Or another target
-            navContainer.appendChild(createMenu(tree));
-
-            LoadItemsToPage(Push = false, Replace = true)
-            return;
-        };
-        fileTreeReq.send();
+    var repoInfoReq = new XMLHttpRequest();
+    repoInfoReq.open("GET", 'https://api.github.com/repos/' + JustRepo, true);
+    repoInfoReq.responseType = "json";
+    repoInfoReq.onload = function() {
+        var info = repoInfoReq.response;
+        var preferred = (repoInfoReq.status === 200 && info && info.default_branch)
+            ? info.default_branch
+            : 'master';
+        var branches = branchFallbacks(preferred);
+        LoadRepoTreeFromBranch(folder_target, branches[0], branches.slice(1));
     };
-    lastCommitReq.send();
+    repoInfoReq.onerror = function() {
+        var branches = branchFallbacks('master');
+        LoadRepoTreeFromBranch(folder_target, branches[0], branches.slice(1));
+    };
+    repoInfoReq.send();
 };
 
 function ShowRateLimit() {
@@ -614,7 +901,7 @@ function ApplyTheme(theme) {
     const bg = getThemeValue(SITE_BG_GRADIENTS, theme.bg_gradient, SITE_BG_GRADIENTS.mist);
     document.body.style.background = bg;
     // Corner rounding only for .paletteColour1
-    const radius = getThemeValue(CORNER_RADII, theme.corner_radius, CORNER_RADII.small);
+    const radius = getThemeValue(CORNER_RADII, theme.corner_radius, CORNER_RADII.none);
     // Palette card gradient
     const paletteBg = getThemeValue(ITEM_BG_GRADIENTS, theme.palette_gradient, ITEM_BG_GRADIENTS.blue);
     // Apply to all .paletteColour1 divs
