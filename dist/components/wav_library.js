@@ -64,6 +64,8 @@
   color: var(--wl-text);
   font-family: var(--wl-sans);
   margin: 0 0 10px;
+  min-width: 0;
+  max-width: 100%;
 }
 .wavlib .wavlib-label {
   margin: 0 0 8px;
@@ -94,6 +96,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  max-width: 100%;
   background: var(--wl-bg);
   border: 1px solid var(--wl-line);
   border-radius: 8px;

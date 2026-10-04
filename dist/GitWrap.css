@@ -384,6 +384,28 @@ body.gw-panel-clear .site-sheet {
     float: left;
     padding: 12px;
     background-color: transparent;
+    box-sizing: border-box;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.galleryRender {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+}
+
+.grid-sizer {
+    height: 0;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+}
+
+.grid-item audio {
+    display: block;
+    width: 100%;
+    max-width: 100%;
 }
 
 .clickable {
@@ -954,8 +976,10 @@ body.gw-accent-blue {
     }
 }
 
-.procsong-embed {
+.procsong-embed,
+.wavlib-embed {
     min-width: 0;
+    max-width: 100%;
 }
 
 /* Bound library + player like folder/URL tiles; no hover scale (interactive controls). */
@@ -1015,8 +1039,71 @@ body.gw-accent-blue {
     color: #e8a090;
 }
 
-.wavlib-embed {
+.procsong-panel,
+.wavlib-panel,
+.procsong-panel .procsong-library,
+.procsong-panel .procsong-player,
+.wavlib-panel .wav-library,
+.wavlib-panel .wav-player-host,
+.ps-player,
+.wav-player,
+.wavlib {
     min-width: 0;
+    max-width: 100%;
+}
+
+.procsong-panel input[type="range"],
+.wavlib-panel input[type="range"] {
+    min-width: 0;
+    max-width: 100%;
+}
+
+@media (max-width: 640px) {
+    .procsong-panel .ps-player .ps-now {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .procsong-panel .ps-player .ps-footer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+
+    .procsong-panel .ps-player .ps-status {
+        order: -1;
+        overflow-wrap: anywhere;
+    }
+
+    .procsong-panel .ps-player .ps-transport {
+        width: 100%;
+    }
+}
+
+@container ps-player (max-width: 560px) {
+    .procsong-panel .ps-player .ps-now {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .procsong-panel .ps-player .ps-controls-col {
+        justify-content: flex-start;
+    }
+
+    .procsong-panel .ps-player .ps-footer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+
+    .procsong-panel .ps-player .ps-status {
+        order: -1;
+        overflow-wrap: anywhere;
+    }
+
+    .procsong-panel .ps-player .ps-transport {
+        width: 100%;
+    }
 }
 
 .paletteColour1.wavlib-panel {

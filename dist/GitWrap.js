@@ -445,7 +445,7 @@ function AddURL(Container, Item, RefreshMasonry) {
         if (this.readyState !== 4) return;
         var parsed = this.status === 200 ? parseUrlShortcut(this.responseText) : { dest: '', logo: '' };
         var card = document.createElement('div');
-        card.className = 'grid-item clickable col-lg-4 col-md-6 col-sm-12 animated fadeIn';
+        card.className = 'grid-item clickable col-12 col-md-6 col-lg-4 animated fadeIn';
         var panel = document.createElement('div');
         panel.className = 'paletteColour1 gw-url-card';
         var logo = document.createElement('img');
@@ -475,7 +475,7 @@ function AddURL(Container, Item, RefreshMasonry) {
 
 function AddFolder(Container, Item, RefreshMasonry) {
     Container.insertAdjacentHTML('beforeend',
-    `<div class = "grid-item clickable col-lg-4 col-md-6 col-sm-12 animated fadeIn" onclick = \'LoadItemsFromPathLink("`+Item.Path+`")\'>
+    `<div class = "grid-item clickable col-12 col-md-6 col-lg-4 animated fadeIn" onclick = \'LoadItemsFromPathLink("`+Item.Path+`")\'>
         <div class = "paletteColour1">
             <h1>` + Item.Title + `</h1>
             <small>` + Item.Subtitle + `</small>
@@ -486,7 +486,7 @@ function AddFolder(Container, Item, RefreshMasonry) {
 
 function AddImage(Container, Item, RefreshMasonry) {
     Container.insertAdjacentHTML('beforeend',
-    `<div class = "grid-item col-lg-4 col-md-6 col-sm-12">
+    `<div class = "grid-item col-12 col-md-6 col-lg-4">
         <img style = "width: 100%; height: 100%" src = "` + Item.URL + `" alt="` + Item.Title + `">
     </div>`);
     CheckItemCountAndRefreshMasonry()
@@ -496,7 +496,7 @@ function AddAudio(Container, Item, RefreshMasonry) {
     var pathUpper = (Item.Path || Item.URL || '').toUpperCase();
     var mime = pathUpper.indexOf('.WAV') >= 0 ? 'audio/wav' : 'audio/mpeg';
     Container.insertAdjacentHTML('beforeend', `
-    <div class = "grid-item animated fadeIn col-lg-4 col-md-6 col-sm-12">
+    <div class = "grid-item animated fadeIn col-12 col-md-6 col-lg-4">
         <div class = "col-sm-12">
             <h5>` + Item.Title + `</h5>
         </div>
@@ -575,7 +575,7 @@ function ensureWavScripts() {
     }
     var base = gitwrapAssetBaseUrl();
     // Cache-bust so local file:// / refresh picks up component edits.
-    var bust = '?v=20261004c';
+    var bust = '?v=20261004d';
     wavScriptsPromise = loadScriptOnce(base + 'components/wav_player.js' + bust)
         .then(function() {
             return loadScriptOnce(base + 'components/wav_library.js' + bust);
@@ -594,7 +594,7 @@ function AddProcsongLibrary(Container, Item) {
     var playerId = 'procsong-player-' + id;
 
     var wrapper = document.createElement('div');
-    wrapper.className = 'grid-item animated fadeIn col-lg-8 col-md-12 col-sm-12 procsong-embed';
+    wrapper.className = 'grid-item animated fadeIn col-12 col-lg-6 procsong-embed';
 
     var panel = document.createElement('div');
     panel.className = 'paletteColour1 procsong-panel';
@@ -670,7 +670,7 @@ function AddWavLibrary(Container, Item) {
     var playerId = 'wav-player-' + id;
 
     var wrapper = document.createElement('div');
-    wrapper.className = 'grid-item animated fadeIn col-lg-8 col-md-12 col-sm-12 wavlib-embed';
+    wrapper.className = 'grid-item animated fadeIn col-12 col-lg-6 wavlib-embed';
 
     var panel = document.createElement('div');
     panel.className = 'paletteColour1 wavlib-panel';
@@ -746,13 +746,23 @@ function LoadItemsFromPathLink(Path){
     }
 }
 
+function ensureGridSizer(grid) {
+    if (grid.querySelector('.grid-sizer')) return;
+    var sizer = document.createElement('div');
+    sizer.className = 'grid-sizer col-12 col-md-6 col-lg-2';
+    grid.insertBefore(sizer, grid.firstChild);
+}
+
 function layoutMasonryNow() {
     var grid = document.querySelector('.galleryRender');
     if (!grid || typeof Masonry === 'undefined') return;
+    ensureGridSizer(grid);
     var msnry = (typeof Masonry.data === 'function') ? Masonry.data(grid) : null;
     if (!msnry) {
         msnry = new Masonry(grid, {
             itemSelector: '.grid-item',
+            columnWidth: '.grid-sizer',
+            percentPosition: true,
             transitionDuration: '0.2s'
         });
     } else {
@@ -938,6 +948,21 @@ function closeAllMenus() {
     });
 }
 
+function closeMobileNav() {
+    if (!window.matchMedia('(max-width: 991px)').matches) return;
+    var nav = document.getElementById('second_nav');
+    if (!nav || !nav.classList.contains('show')) return;
+    if (window.bootstrap && bootstrap.Collapse) {
+        var instance = typeof bootstrap.Collapse.getInstance === 'function'
+            ? bootstrap.Collapse.getInstance(nav)
+            : null;
+        if (!instance) instance = new bootstrap.Collapse(nav, { toggle: false });
+        instance.hide();
+        return;
+    }
+    nav.classList.remove('show');
+}
+
 function closeSiblingMenus(li) {
     if (!li.parentNode) return;
     Array.from(li.parentNode.children).forEach(function(sibling) {
@@ -985,6 +1010,7 @@ function createMenu(node, parentPath = '', isRoot = true) {
             e.stopPropagation();
             activateMenuItem(meta, fullPath);
             closeAllMenus();
+            closeMobileNav();
         };
 
         li.appendChild(btn);

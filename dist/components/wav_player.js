@@ -62,6 +62,8 @@
   margin: 0 0 10px;
   min-width: 0;
   max-width: 100%;
+  container-type: inline-size;
+  container-name: wav-player;
 }
 .wav-player .wp-label {
   margin: 0 0 8px;
@@ -231,6 +233,8 @@
   gap: 10px;
   margin-top: 12px;
   min-height: 28px;
+  min-width: 0;
+  max-width: 100%;
 }
 .wav-player .wp-status {
   margin: 0;
@@ -238,13 +242,14 @@
   font-size: 13px;
   min-width: 0;
   flex: 0 1 auto;
+  overflow-wrap: anywhere;
 }
 .wav-player .wp-status.is-error { color: var(--wp-error); }
 .wav-player .wp-status:empty { display: none; }
 .wav-player.is-downloading .wp-status {
   color: var(--wp-load);
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  white-space: normal;
 }
 .wav-player.is-downloading-unknown .wp-status {
   animation: wp-pulse 1.1s ease-in-out infinite;
@@ -303,10 +308,33 @@
 .wav-player.is-loading .wp-box {
   border-color: color-mix(in srgb, var(--wp-load) 70%, var(--wp-line));
 }
+.wav-player input[type="range"] {
+  min-width: 0;
+  max-width: 100%;
+}
 @media (max-width: 640px) {
   .wav-player .wp-now {
     grid-template-columns: 1fr;
   }
+  .wav-player .wp-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .wav-player .wp-status { order: -1; }
+  .wav-player .wp-progress { width: 100%; }
+}
+@container wav-player (max-width: 520px) {
+  .wav-player .wp-now {
+    grid-template-columns: 1fr;
+  }
+  .wav-player .wp-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .wav-player .wp-status { order: -1; }
+  .wav-player .wp-progress { width: 100%; }
 }
 `;
 
@@ -809,7 +837,7 @@
       }
       if (known) {
         const pct = Math.min(100, Math.round((loaded / total) * 100));
-        this.setStatus(`Downloading ${pct}% · ${formatBytes(loaded)} / ${formatBytes(total)}`);
+        this.setStatus(`${pct}% · ${formatBytes(loaded)} / ${formatBytes(total)}`);
         this.ui.progress.max = '100';
         this.ui.progress.value = String(pct);
       } else {
