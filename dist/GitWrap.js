@@ -10,6 +10,8 @@ let procsongScriptsPromise = null;
 let procsongInstanceId = 0;
 let wavScriptsPromise = null;
 let wavInstanceId = 0;
+let layoutObserver = null;
+let masonryTimer = null;
 
 
 // --- THEME CONSTANTS ---
@@ -423,6 +425,7 @@ function AddProcsongLibrary(Container, Item) {
     panel.appendChild(playerEl);
     wrapper.appendChild(panel);
     Container.appendChild(wrapper);
+    watchDynamicLayout(wrapper);
 
     if (CurrentTheme) {
         ApplyTheme(CurrentTheme);
@@ -498,6 +501,7 @@ function AddWavLibrary(Container, Item) {
     panel.appendChild(playerEl);
     wrapper.appendChild(panel);
     Container.appendChild(wrapper);
+    watchDynamicLayout(wrapper);
 
     if (CurrentTheme) {
         ApplyTheme(CurrentTheme);
@@ -541,12 +545,49 @@ function LoadItemsFromPathLink(Path){
     }
 }
 
-function RefreshMasonry() {
-    imagesLoaded( '.grid', function( instance ) {
-        var msnry = new Masonry( '.grid', {
-            itemSelector: '.grid-item'
+function layoutMasonryNow() {
+    var grid = document.querySelector('.galleryRender');
+    if (!grid || typeof Masonry === 'undefined') return;
+    var msnry = (typeof Masonry.data === 'function') ? Masonry.data(grid) : null;
+    if (!msnry) {
+        msnry = new Masonry(grid, {
+            itemSelector: '.grid-item',
+            transitionDuration: '0.2s'
         });
-    });
+    } else {
+        msnry.reloadItems();
+        msnry.layout();
+    }
+}
+
+function RefreshMasonry() {
+    if (typeof imagesLoaded === 'function') {
+        imagesLoaded('.grid', layoutMasonryNow);
+    } else {
+        layoutMasonryNow();
+    }
+}
+
+function scheduleMasonry() {
+    if (masonryTimer) clearTimeout(masonryTimer);
+    masonryTimer = setTimeout(function() {
+        masonryTimer = null;
+        layoutMasonryNow();
+    }, 80);
+}
+
+function watchDynamicLayout(el) {
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    if (!layoutObserver) {
+        layoutObserver = new ResizeObserver(function() {
+            scheduleMasonry();
+        });
+    }
+    layoutObserver.observe(el);
+}
+
+function resetLayoutWatch() {
+    if (layoutObserver) layoutObserver.disconnect();
 }
 
 function LoadItemsToPage(Push=true,Replace=false) {
@@ -572,6 +613,7 @@ function LoadItemsToPage(Push=true,Replace=false) {
         }
     }
     
+    resetLayoutWatch();
     bannerRender = document.getElementsByClassName('carousel-inner')[0]
     bannerRender.innerHTML = ''
     pageRender = document.getElementsByClassName('pageRender')[0]
@@ -624,138 +666,174 @@ function CheckItemCountAndRefreshMasonry() {
     }
 }
 
+function isMenuItem(item) {
+    if (!item) return false;
+    return item.Type === 'Folder'
+        || item.Type === 'Url'
+        || item.Type === 'ProcsongLibrary'
+        || item.Type === 'WavLibrary';
+}
+
+function parentFolderPath(path) {
+    var parts = String(path || '').split('/').filter(Boolean);
+    if (parts.length <= 1) return '';
+    parts.pop();
+    return parts.join('/') + '/';
+}
+
+function openStoredUrl(item) {
+    var req = new XMLHttpRequest();
+    req.open('GET', item.URL, true);
+    req.onload = function() {
+        var dest = '';
+        if (req.status === 200) {
+            dest = String(req.responseText || '').replace(/URL:/ig, '').trim();
+        }
+        if (dest) window.location = dest;
+    };
+    req.send();
+}
+
+function activateMenuItem(meta, fullPath) {
+    if (meta && meta.Type === 'Url') {
+        openStoredUrl(meta);
+        return;
+    }
+    // Libraries render on their parent folder page, not as their own route.
+    if (meta && (meta.Type === 'ProcsongLibrary' || meta.Type === 'WavLibrary')) {
+        LoadItemsFromPathLink(parentFolderPath(meta.Path));
+        return;
+    }
+    LoadItemsFromPathLink(fullPath);
+}
+
 function buildTreeFromFlatJson(flatSite) {
     const root = {};
+    function ensureNode(children, part) {
+        if (!children[part]) children[part] = { __children: {}, __meta: null };
+        return children[part];
+    }
     for (const key in flatSite) {
         const item = flatSite[key];
-        if (item.Type !== 'Folder') continue; // Only include folders
+        if (!isMenuItem(item)) continue;
         const parts = item.Path.split('/').filter(Boolean);
-        let node = root;
+        let children = root;
+        let node = null;
         for (let i = 0; i < parts.length; i++) {
-            const part = parts[i];
-            if (!node[part])
-                node[part] = { __children: {}, __meta: null };
-            if (i === parts.length - 1)
-                node[part].__meta = item;
-            node = node[part].__children;
+            node = ensureNode(children, parts[i]);
+            children = node.__children;
         }
+        if (node) node.__meta = item;
     }
     return root;
 }
 
+function closeAllMenus() {
+    document.querySelectorAll('.gw-submenu.show').forEach(function(menu) {
+        menu.classList.remove('show');
+    });
+    document.querySelectorAll('.gw-menu-expander.is-open').forEach(function(btn) {
+        btn.classList.remove('is-open');
+    });
+}
+
+function closeSiblingMenus(li) {
+    if (!li.parentNode) return;
+    Array.from(li.parentNode.children).forEach(function(sibling) {
+        if (sibling === li) return;
+        sibling.querySelectorAll('.gw-submenu.show').forEach(function(menu) {
+            menu.classList.remove('show');
+        });
+        sibling.querySelectorAll('.gw-menu-expander.is-open').forEach(function(btn) {
+            btn.classList.remove('is-open');
+        });
+    });
+}
+
+function placeSubmenu(li, submenu, isRoot) {
+    submenu.classList.remove('gw-submenu-right');
+    if (isRoot) return;
+    var rect = li.getBoundingClientRect();
+    if (rect.left < 260) submenu.classList.add('gw-submenu-right');
+}
+
 function createMenu(node, parentPath = '', isRoot = true) {
     const ul = document.createElement('ul');
-    ul.className = isRoot ? 'navbar-nav flex-row flex-wrap main-navbar' : 'dropdown-menu shadow-sm animate__animated animate__fadeIn';
+    ul.className = isRoot ? 'navbar-nav flex-row flex-wrap main-navbar' : 'gw-submenu';
 
     for (const key in node) {
         if (!node.hasOwnProperty(key)) continue;
         const item = node[key];
         const meta = item.__meta;
         const fullPath = meta ? meta.Path : (parentPath ? parentPath + '/' + key : key);
+        const label = meta ? (meta.Title || key) : key;
 
         const li = document.createElement('li');
-        li.className = isRoot ? 'nav-item position-relative d-flex align-items-center' : 'dropdown-item dropdown-submenu position-relative d-flex align-items-center';
+        li.className = isRoot
+            ? 'nav-item gw-menu-item'
+            : 'gw-menu-item';
 
-        // Main navigation button
         const btn = document.createElement('button');
-        btn.className = isRoot ? 'nav-link btn btn-link px-3 py-2 text-dark flex-grow-1 text-start' : 'dropdown-item btn btn-link text-dark flex-grow-1 text-start';
-        btn.textContent = meta ? (meta.Title || key) : key;
+        btn.type = 'button';
+        btn.className = isRoot
+            ? 'nav-link btn btn-link px-3 py-2 text-dark gw-menu-label'
+            : 'gw-menu-label';
+        btn.textContent = label;
         btn.onclick = (e) => {
             e.stopPropagation();
-            LoadItemsFromPathLink(fullPath);
-            // Close all open dropdown menus
-            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
-                menu.classList.remove('show');
-                menu.style.display = 'none';
-            });
-            // Reset all chevrons
-            document.querySelectorAll('.expander-icon').forEach(icon => {
-                icon.style.transform = '';
-            });
+            activateMenuItem(meta, fullPath);
+            closeAllMenus();
         };
 
         li.appendChild(btn);
 
-        // Expand/collapse button for items with children
         const hasChildren = Object.keys(item.__children).length > 0;
         let childUl = null;
         if (hasChildren) {
-            // Expander button (chevron)
             const expanderBtn = document.createElement('button');
-            expanderBtn.className = 'expander-btn btn btn-link p-0 ms-2';
-            expanderBtn.setAttribute('aria-label', 'Expand submenu');
-            expanderBtn.setAttribute('type', 'button');
-            expanderBtn.setAttribute('tabindex', '-1');
-            expanderBtn.innerHTML = '<span class="expander-icon" style="display:inline-block;transition:transform 0.2s;"><svg width="16" height="16" fill="currentColor"><path d="M4.646 6.646a.5.5 0 0 1 .708 0L8 9.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z"/></svg></span>';
-            //expanderBtn.style.background = 'none';
-            //expanderBtn.style.border = 'none';
-            //expanderBtn.style.outline = 'none'; // Remove outline on click/focus
+            expanderBtn.type = 'button';
+            expanderBtn.className = 'gw-menu-expander';
+            expanderBtn.setAttribute('aria-label', 'Show pages inside ' + label);
+            expanderBtn.title = 'Show pages inside';
+            expanderBtn.innerHTML = '<span class="gw-chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 6.646a.5.5 0 0 1 .708 0L8 9.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z"/></svg></span>';
 
             expanderBtn.onclick = function(e) {
                 e.stopPropagation();
-                // Close any open sibling submenus
-                Array.from(li.parentNode.children).forEach(sibling => {
-                    if (sibling !== li) {
-                        const openMenu = sibling.querySelector('.dropdown-menu.show');
-                        if (openMenu) {
-                            openMenu.classList.remove('show');
-                            openMenu.style.display = 'none';
-                            // Also reset chevron
-                            const icon = sibling.querySelector('.expander-icon');
-                            if (icon) icon.style.transform = '';
-                        }
-                    }
-                });
+                closeSiblingMenus(li);
+                const isOpen = childUl && childUl.classList.contains('show');
+                if (isOpen) {
+                    childUl.classList.remove('show');
+                    expanderBtn.classList.remove('is-open');
+                    childUl.querySelectorAll('.gw-submenu.show').forEach(function(menu) {
+                        menu.classList.remove('show');
+                    });
+                    childUl.querySelectorAll('.gw-menu-expander.is-open').forEach(function(openBtn) {
+                        openBtn.classList.remove('is-open');
+                    });
+                    return;
+                }
                 if (!childUl) {
                     childUl = createMenu(item.__children, fullPath, false);
-                    childUl.classList.add('show', 'submenu-below-expander');
-                    li.appendChild(childUl); // Attach as child of li for proper nesting
-                } else {
-                    childUl.classList.add('show');
-                    childUl.style.display = '';
+                    li.appendChild(childUl);
                 }
-                expanderBtn.querySelector('.expander-icon').style.transform = 'rotate(180deg)';
-                // Position submenu right-aligned with expanderBtn
-                    positionSubmenuRightAligned(expanderBtn, childUl);
-                
+                placeSubmenu(li, childUl, isRoot);
+                childUl.classList.add('show');
+                expanderBtn.classList.add('is-open');
             };
 
-            // Helper to position submenu below expanderBtn
-            // This function is defined below createMenu
-
-
             li.appendChild(expanderBtn);
-
         }
 
         ul.appendChild(li);
     }
 
-    // Only add the global click handler once for the root menu
     if (isRoot && !window._menuOutsideClickHandlerAdded) {
         window._menuOutsideClickHandlerAdded = true;
-        document.addEventListener('click', function(e) {
-            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
-                menu.classList.remove('show');
-                menu.style.display = 'none';
-            });
-            document.querySelectorAll('.expander-icon').forEach(icon => {
-                icon.style.transform = '';
-            });
+        document.addEventListener('click', function() {
+            closeAllMenus();
         });
     }
     return ul;
-}
-
-// Helper to position submenu right-aligned with expander button
-function positionSubmenuRightAligned(button, submenu) {
-    submenu.style.position = 'absolute';
-    submenu.style.right = '0';
-    submenu.style.left = 'auto';
-    submenu.style.top = '48px';// (button.offsetTop + button.offsetHeight) + 'px';
-    submenu.style.minWidth = '220px';
-    submenu.style.zIndex = 1000;
-    submenu.style.background = '#fff';
 }
 
 function LoadRepoTreeFromBranch(folder_target, branch, fallbacks) {
