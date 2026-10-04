@@ -277,7 +277,7 @@ function AddBannerImage(Container, Item) {
                     <p>`+Item.Subtitle+`</p>
                 </div>
             </div>`
-    Container.innerHTML += html;
+    Container.insertAdjacentHTML('beforeend', html);
     CheckItemCountAndRefreshMasonry()
 }
 
@@ -289,13 +289,13 @@ function AddHTML(Container, Item) {
             if (this.status == 200) {
                 response = this.responseText
             }
-            Container.innerHTML +=
+            Container.insertAdjacentHTML('beforeend',
             `<div class = "col-lg-12 col-md-12 col-sm-12">
                 <h1>` + Item.Title + `</h1>
                 <small ">` + Item.Subtitle + `</small>
                 <hr>` +
                 response + 
-            `</div>`
+            `</div>`);
             CheckItemCountAndRefreshMasonry()
         }
     }
@@ -474,28 +474,28 @@ function AddURL(Container, Item, RefreshMasonry) {
 }
 
 function AddFolder(Container, Item, RefreshMasonry) {
-    Container.innerHTML += 
+    Container.insertAdjacentHTML('beforeend',
     `<div class = "grid-item clickable col-lg-4 col-md-6 col-sm-12 animated fadeIn" onclick = \'LoadItemsFromPathLink("`+Item.Path+`")\'>
         <div class = "paletteColour1">
             <h1>` + Item.Title + `</h1>
             <small>` + Item.Subtitle + `</small>
         </div>
-    </div>`
+    </div>`);
     CheckItemCountAndRefreshMasonry()
 }
 
 function AddImage(Container, Item, RefreshMasonry) {
-    Container.innerHTML += 
+    Container.insertAdjacentHTML('beforeend',
     `<div class = "grid-item col-lg-4 col-md-6 col-sm-12">
         <img style = "width: 100%; height: 100%" src = "` + Item.URL + `" alt="` + Item.Title + `">
-    </div>`
+    </div>`);
     CheckItemCountAndRefreshMasonry()
 }
 
 function AddAudio(Container, Item, RefreshMasonry) {
     var pathUpper = (Item.Path || Item.URL || '').toUpperCase();
     var mime = pathUpper.indexOf('.WAV') >= 0 ? 'audio/wav' : 'audio/mpeg';
-    Container.innerHTML += `
+    Container.insertAdjacentHTML('beforeend', `
     <div class = "grid-item animated fadeIn col-lg-4 col-md-6 col-sm-12">
         <div class = "col-sm-12">
             <h5>` + Item.Title + `</h5>
@@ -506,7 +506,7 @@ function AddAudio(Container, Item, RefreshMasonry) {
                 Your browser does not support the audio element
             </audio>
         </div>
-     </div>`
+     </div>`);
      CheckItemCountAndRefreshMasonry()
 }
 
