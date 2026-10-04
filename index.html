@@ -4,6 +4,19 @@
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Gitwrap</title>
+    <meta name="description" content="Turn a public GitHub repo into a website in the browser. No hosting setup, no install.">
+    <meta name="theme-color" content="#0a0a0a">
+    <link rel="icon" type="image/png" href="Logo.png">
+    <link rel="apple-touch-icon" href="Logo.png">
+    <meta property="og:title" content="Gitwrap">
+    <meta property="og:description" content="Turn a public GitHub repo into a website in the browser. No hosting setup, no install.">
+    <meta property="og:image" content="Logo.png">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Gitwrap">
+    <meta name="twitter:description" content="Turn a public GitHub repo into a website in the browser. No hosting setup, no install.">
+    <meta name="twitter:image" content="Logo.png">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.slim.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.0.1/js/bootstrap.bundle.min.js" defer></script>
@@ -15,26 +28,24 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&family=East+Sea+Dokdo&family=Figtree:wght@400;500;600&family=Fraunces:opsz,wght@9..144,520;9..144,640&family=Fredoka:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=Inter:wght@400;500;600&family=Karla:wght@400;500;600&family=Lilita+One&family=Literata:opsz,wght@7..72,400;7..72,600&family=Manrope:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,560&family=Nunito+Sans:wght@400;600;700&family=Outfit:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&family=Syne+Mono&family=Titan+One&family=VT323&family=Work+Sans:wght@400;500;600&family=Yomogi&display=swap" rel="stylesheet">
     
     <script src="dist/GitWrap.js"></script>
     <link rel="stylesheet" href="dist/GitWrap.css">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=East+Sea+Dokdo&family=Syne+Mono&family=VT323&family=Yomogi&display=swap" rel="stylesheet">
 
     
 </head>
-    <body>
+    <body class="gw-builder">
         <!-- Modern Loader -->
         <div id="mainLoader" class="main-loader" aria-label="Loading" role="status">
             <div class="spinner"></div>
         </div>
 
         <nav class="navbar navbar-expand-lg navbar-light light_shadow" role="navigation">
-            <a class="navbar-brand" href="">
-                <div style="margin-top:4px;margin-bottom:4px">Gitwrap</div>
+            <a class="navbar-brand gw-brand" href="">
+                <img src="Logo.png" alt="" class="gw-nav-logo">
+                <img src="Name.png" alt="Gitwrap" class="gw-nav-name">
             </a>
             <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#second_nav" aria-controls="second_nav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -48,14 +59,11 @@
             <div class="carousel-inner"></div>
         </div>
 
-        <!-- Hero Banner -->
-        <header class="container-fluid py-4 mb-4" style="margin-bottom: 0px!important;background-color:transparent">
-            <div class="row align-items-center justify-content-center">
-                <div class="col-lg-8 pageRender">
-                    <h1 class="display-5 fw-bold mb-2">GitWrap</h1>
-                    <p class="lead mb-0">Instantly turn any public GitHub repo into a simple modern, responsive website.</p>
-                </div>
-            </div>
+        <!-- Shown on the builder only. Repo pages render their HTML inside the content panel. -->
+        <header id="generatorIntro" class="gw-landing">
+            <img src="Logo.png" alt="" class="gw-landing-logo">
+            <img src="Name.png" alt="Gitwrap" class="gw-landing-name">
+            <p>Turn a public GitHub repo into a website. It all happens in the browser.</p>
         </header>
         
         <br>
@@ -93,10 +101,85 @@
                                     <label class="col-sm-4 col-form-label">Brand Font</label>
                                     <div class="col-sm-8">
                                         <select id="site_brand_font" class="form-select" aria-label="">
+                                            <option class="brand_9" value="9">Baloo 2</option>
+                                            <option class="brand_10" value="10">Fredoka</option>
+                                            <option class="brand_11" value="11">Lilita One</option>
+                                            <option class="brand_12" value="12">Titan One</option>
+                                            <option class="brand_7" value="7">Outfit</option>
+                                            <option class="brand_4" value="4">Inter</option>
                                             <option class="brand_0" selected value="0">Syne Mono</option>
                                             <option class="brand_1" value="1">Yomogi</option>
                                             <option class="brand_2" value="2">East Sea Dokdo</option>
                                             <option class="brand_3" value="3">VT323</option>
+                                            <option class="brand_5" value="5">Fraunces</option>
+                                            <option class="brand_6" value="6">Newsreader</option>
+                                            <option class="brand_8" value="8">Cormorant</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row" style="margin-top:12px">
+                                    <label class="col-sm-4 col-form-label">Content Font</label>
+                                    <div class="col-sm-8">
+                                        <select id="site_content_font" class="form-select" aria-label="">
+                                            <option class="font_sourcesans" value="sourcesans" selected>Source Sans 3</option>
+                                            <option class="font_figtree" value="figtree">Figtree</option>
+                                            <option class="font_dmsans" value="dmsans">DM Sans</option>
+                                            <option class="font_jakarta" value="jakarta">Plus Jakarta Sans</option>
+                                            <option class="font_plex" value="plex">IBM Plex Sans</option>
+                                            <option class="font_nunito" value="nunito">Nunito Sans</option>
+                                            <option class="font_karla" value="karla">Karla</option>
+                                            <option class="font_worksans" value="worksans">Work Sans</option>
+                                            <option class="font_inter" value="inter">Inter</option>
+                                            <option class="font_manrope" value="manrope">Manrope</option>
+                                            <option class="font_outfit" value="outfit">Outfit</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row" style="margin-top:12px">
+                                    <label class="col-sm-4 col-form-label">Tile Font</label>
+                                    <div class="col-sm-8">
+                                        <select id="site_tile_font" class="form-select" aria-label="">
+                                            <option class="font_outfit" value="outfit" selected>Outfit</option>
+                                            <option class="font_dmsans" value="dmsans">DM Sans</option>
+                                            <option class="font_jakarta" value="jakarta">Plus Jakarta Sans</option>
+                                            <option class="font_figtree" value="figtree">Figtree</option>
+                                            <option class="font_manrope" value="manrope">Manrope</option>
+                                            <option class="font_nunito" value="nunito">Nunito Sans</option>
+                                            <option class="font_inter" value="inter">Inter</option>
+                                            <option class="font_sourcesans" value="sourcesans">Source Sans 3</option>
+                                            <option class="font_plex" value="plex">IBM Plex Sans</option>
+                                            <option class="font_karla" value="karla">Karla</option>
+                                            <option class="font_worksans" value="worksans">Work Sans</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row" style="margin-top:12px">
+                                    <label class="col-sm-4 col-form-label">Text colour</label>
+                                    <div class="col-sm-8">
+                                        <select id="site_text_colour" class="form-select" aria-label="">
+                                            <option value="ink" selected>Ink</option>
+                                            <option value="slate">Slate</option>
+                                            <option value="stone">Stone</option>
+                                            <option value="white">White</option>
+                                            <option value="paper">Paper</option>
+                                            <option value="teal">Teal</option>
+                                            <option value="blue">Blue</option>
+                                            <option value="coral">Coral</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row" style="margin-top:12px">
+                                    <label class="col-sm-4 col-form-label">Title colour</label>
+                                    <div class="col-sm-8">
+                                        <select id="site_title_colour" class="form-select" aria-label="">
+                                            <option value="ink" selected>Ink</option>
+                                            <option value="slate">Slate</option>
+                                            <option value="stone">Stone</option>
+                                            <option value="white">White</option>
+                                            <option value="paper">Paper</option>
+                                            <option value="teal">Teal</option>
+                                            <option value="blue">Blue</option>
+                                            <option value="coral">Coral</option>
                                         </select>
                                     </div>
                                 </div>
@@ -113,7 +196,7 @@
                                     <label class="col-sm-4 col-form-label">Site Background Gradient</label>
                                     <div class="col-sm-8">
                                         <select id="site_bg_gradient" class="form-select" aria-label="">
-                                            <option value="mist" selected>Mist</option>
+                                            <option value="mist">Mist</option>
                                             <option value="silver">Silver</option>
                                             <option value="white">White</option>
                                             <option value="coral">Coral</option>
@@ -121,6 +204,42 @@
                                             <option value="apricot">Apricot</option>
                                             <option value="sky">Sky</option>
                                             <option value="blush">Blush</option>
+                                            <option value="paper" selected>Paper</option>
+                                            <option value="fog">Fog</option>
+                                            <option value="stone">Stone</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row" style="margin-top:12px">
+                                    <label class="col-sm-4 col-form-label">Content background</label>
+                                    <div class="col-sm-8">
+                                        <select id="site_panel" class="form-select" aria-label="">
+                                            <option value="white" selected>White</option>
+                                            <option value="paper">Paper</option>
+                                            <option value="fog">Fog</option>
+                                            <option value="ink">Ink</option>
+                                            <option value="clear">Invisible</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row" style="margin-top:12px">
+                                    <label class="col-sm-4 col-form-label">Page Surface</label>
+                                    <div class="col-sm-8">
+                                        <select id="site_surface" class="form-select" aria-label="">
+                                            <option value="line" selected>Hairline</option>
+                                            <option value="plain">Open</option>
+                                            <option value="lift">Lifted</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row" style="margin-top:12px">
+                                    <label class="col-sm-4 col-form-label">Accent</label>
+                                    <div class="col-sm-8">
+                                        <select id="site_accent" class="form-select" aria-label="">
+                                            <option value="ink" selected>Ink</option>
+                                            <option value="slate">Slate</option>
+                                            <option value="teal">Teal</option>
+                                            <option value="blue">Blue</option>
                                         </select>
                                     </div>
                                 </div>
@@ -136,10 +255,13 @@
                                     </div>
                                 </div>
                                 <div class="form-group row" style="margin-top:12px">
-                                    <label class="col-sm-4 col-form-label">Item Background Gradient</label>
+                                    <label class="col-sm-4 col-form-label">Tile colour</label>
                                     <div class="col-sm-8">
                                         <select id="palette_gradient" class="form-select" aria-label="">
-                                            <option value="darkgray" selected>Charcoal</option>
+                                            <option value="white">White</option>
+                                            <option value="paper">Paper</option>
+                                            <option value="fog">Fog</option>
+                                            <option value="darkgray">Charcoal</option>
                                             <option value="blue">Deep Ocean</option>
                                             <option value="purple">Plum Velvet</option>
                                             <option value="coral">Warm Ember</option>
@@ -148,6 +270,8 @@
                                             <option value="sky">Midnight Teal</option>
                                             <option value="blush">Berry Wine</option>
                                             <option value="none">Solid Night</option>
+                                            <option value="ink" selected>Ink</option>
+                                            <option value="graphite">Graphite</option>
                                         </select>
                                     </div>
                                 </div>
@@ -203,16 +327,23 @@
 
         <div class="container-fluid">
             <div class="row justify-content-center">
-                <main id="content" class="col-lg-8 content_narrow light_shadow" tabindex="-1">
-                    <div class="linkRender"></div>
-                    <div class="grid galleryRender"></div>
-                </main>
+                <div id="siteSheet" class="col-lg-8 site-sheet">
+                    <div class="pageRender"></div>
+                    <main id="content" tabindex="-1">
+                        <div class="linkRender"></div>
+                        <div class="grid galleryRender"></div>
+                    </main>
+                </div>
             </div>
         </div>
         <br> <br> <br> <br>
 
         <footer class="footer" role="contentinfo">
-            <small>Powered by <a href="https://michaeldowd2.github.io/GitWrap/">GitWrap</a> &mdash; a simple Bootstrap wrapper for GitHub repos</small>
+            <a class="gw-mark" href="https://michaeldowd2.github.io/GitWrap/">
+                <img src="Logo.png" alt="" class="gw-mark-logo">
+                <img src="Name.png" alt="Gitwrap" class="gw-mark-name">
+            </a>
+            <small>a simple Bootstrap wrapper for GitHub repos</small>
         </footer>
         
     </body>

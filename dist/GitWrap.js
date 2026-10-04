@@ -24,6 +24,9 @@ const SITE_BG_GRADIENTS = {
     sky:     'linear-gradient(90deg,#e0f0ff 0%,#ffb3e6 100%)', // sky blue to soft pink (complementary, more saturated)
     blush:   'linear-gradient(90deg,#f8e1ec 0%,#b3e6ff 100%)', // blush pink to pale blue (complementary, more saturated)
     white:   'linear-gradient(90deg,#fff 0%,#bdbdbd 100%)',
+    paper:   'linear-gradient(180deg, #f4f1eb 0%, #e6ebf0 100%)',
+    fog:     '#f3f4f6',
+    stone:   '#e7e5e4',
 };
 const ITEM_BG_GRADIENTS = {
     darkgray: 'linear-gradient(135deg,#2d3035 0%,#444851 100%)',
@@ -35,7 +38,44 @@ const ITEM_BG_GRADIENTS = {
     sky:      'linear-gradient(135deg,#223a5e 0%,#38a3a5 100%)',
     blush:    'linear-gradient(135deg,#4b2c3e 0%,#ff5eae 100%)',
     none:     '#222',
+    ink:      '#161616',
+    graphite: '#3a3a3a',
+    white:    '#ffffff',
+    paper:    '#f7f4ee',
+    fog:      '#f3f4f6',
 };
+const TEXT_COLOURS = {
+    ink: '#161616',
+    slate: '#334155',
+    stone: '#57534e',
+    white: '#ffffff',
+    paper: '#f6f3ee',
+    teal: '#0f766e',
+    blue: '#1d4ed8',
+    coral: '#e24b3b',
+};
+const PANEL_COLOURS = {
+    white: '#ffffff',
+    paper: '#f7f4ee',
+    fog: '#f3f4f6',
+    ink: '#161616',
+    clear: 'transparent',
+};
+const LIGHT_TILES = { white: true, paper: true, fog: true };
+const TEXT_FONTS = {
+    sourcesans: "'Source Sans 3', sans-serif",
+    figtree: "'Figtree', sans-serif",
+    dmsans: "'DM Sans', sans-serif",
+    jakarta: "'Plus Jakarta Sans', sans-serif",
+    plex: "'IBM Plex Sans', sans-serif",
+    nunito: "'Nunito Sans', sans-serif",
+    karla: "'Karla', sans-serif",
+    worksans: "'Work Sans', sans-serif",
+    inter: "'Inter', sans-serif",
+    manrope: "'Manrope', sans-serif",
+    outfit: "'Outfit', sans-serif",
+};
+
 const CORNER_RADII = {
     none: '0px',
     small: '6px',
@@ -70,7 +110,7 @@ function createURL() {
 }
 
 function GetDefaultTheme() {
-    return '0'
+    return '0|paper|none|ink|line|ink|sourcesans|outfit|ink|ink|white'
 }
 
 function EncodeThemeFromUI() {
@@ -79,18 +119,33 @@ function EncodeThemeFromUI() {
     let bg_gradient = document.getElementById('site_bg_gradient').value;
     let corner_radius = document.getElementById('site_corner_radius').value;
     let palette_gradient = document.getElementById('palette_gradient').value;
-    // Format: brand|bg|radius|palette
-    themestring += brand_font + '|' + bg_gradient + '|' + corner_radius + '|' + palette_gradient;
+    let surface = document.getElementById('site_surface').value;
+    let accent = document.getElementById('site_accent').value;
+    let content_font = document.getElementById('site_content_font').value;
+    let tile_font = document.getElementById('site_tile_font').value;
+    let text_colour = document.getElementById('site_text_colour').value;
+    let title_colour = document.getElementById('site_title_colour').value;
+    let panel = document.getElementById('site_panel').value;
+    // Format: brand|bg|radius|palette|surface|accent|content|tile|text|title|panel
+    themestring += brand_font + '|' + bg_gradient + '|' + corner_radius + '|' + palette_gradient + '|' + surface + '|' + accent + '|' + content_font + '|' + tile_font + '|' + text_colour + '|' + title_colour + '|' + panel;
     return themestring;
 }
 
 function DecodeThemeFromUI(theme_string) {
     let theme = {};
-    let parts = theme_string.split('|');
-    theme['brand_font_class'] = 'brand_' + (parts[0] || '0');
-    theme['bg_gradient'] = parts[1] || 'mist';
+    let parts = String(theme_string || '').split('|');
+    // Missing fields, including a URL with no TS at all, use the current defaults.
+    theme['brand_font_class'] = 'brand_' + (parts[0] !== undefined && parts[0] !== '' ? parts[0] : '0');
+    theme['bg_gradient'] = parts[1] || 'paper';
     theme['corner_radius'] = parts[2] || 'none';
-    theme['palette_gradient'] = parts[3] || 'darkgray';
+    theme['palette_gradient'] = parts[3] || 'ink';
+    theme['surface'] = parts[4] || 'line';
+    theme['accent'] = parts[5] || 'ink';
+    theme['content_font'] = parts[6] || 'sourcesans';
+    theme['tile_font'] = parts[7] || 'outfit';
+    theme['text_colour'] = parts[8] || 'ink';
+    theme['title_colour'] = parts[9] || 'ink';
+    theme['panel'] = parts[10] || 'white';
     return theme;
 }
 
@@ -249,27 +304,169 @@ function AddHTML(Container, Item) {
     return;
 }
 
-function AddURL(Container, Item, RefreshMasonry) {
-    xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function() {
-        if (this.readyState == 4) {
-            response = 'URL not found'
-            if (this.status == 200) {
-                response = this.responseText.replace("URL:","")
-            }
-            Container.innerHTML +=
-            `<div class = "grid-item clickable col-lg-4 col-md-6 col-sm-12 animated fadeIn">
-                <div class = "paletteColour1" onclick="window.location='` + response + `';">
-                    <h1>` + Item.Title + `</h1>
-                    <small>` + Item.Subtitle + `</small>
-                </div>
-            </div>`
-            CheckItemCountAndRefreshMasonry()
+function parseUrlShortcut(text) {
+    var dest = '';
+    var logo = '';
+    String(text || '').split(/\r?\n/).forEach(function(line) {
+        line = line.trim();
+        if (!line || line.charAt(0) === '#') return;
+        var labeled = line.match(/^(URL|LOGO|ICON|IMAGE)\s*:\s*(.*)$/i);
+        if (labeled) {
+            if (labeled[1].toUpperCase() === 'URL') dest = labeled[2].trim();
+            else logo = labeled[2].trim();
+            return;
         }
+        if (!dest && /^https?:\/\//i.test(line)) dest = line;
+    });
+    if (!dest) {
+        var first = String(text || '').replace(/URL:/ig, '').trim().split(/\r?\n/)[0];
+        dest = first ? first.trim() : '';
     }
-    xhttp.open("GET", Item.URL, true);
-    xhttp.send();
-    return;
+    return { dest: dest, logo: logo };
+}
+
+function resolveAgainst(base, href) {
+    if (!href) return '';
+    try { return new URL(href, base).href; }
+    catch (e) { return ''; }
+}
+
+function pickIconFromHtml(html, pageUrl) {
+    var doc;
+    try { doc = new DOMParser().parseFromString(html, 'text/html'); }
+    catch (e) { return ''; }
+    var links = Array.prototype.slice.call(doc.querySelectorAll('link[href]'));
+    var icons = links.filter(function(link) {
+        var rel = (link.getAttribute('rel') || '').toLowerCase();
+        return /(^|\s)(apple-touch-icon|icon|shortcut)(\s|$)/.test(rel) || rel.indexOf('apple-touch-icon') >= 0;
+    });
+    function score(link) {
+        var rel = (link.getAttribute('rel') || '').toLowerCase();
+        var href = link.getAttribute('href') || '';
+        var sizes = link.getAttribute('sizes') || '';
+        var sizeMatch = sizes.match(/(\d+)/);
+        var value = sizeMatch ? parseInt(sizeMatch[1], 10) : 0;
+        if (rel.indexOf('apple-touch-icon') >= 0) value += 80;
+        if (/\.png(\?|$)/i.test(href)) value += 24;
+        if (/\.svg(\?|$)/i.test(href)) value += 18;
+        if (/\.ico(\?|$)/i.test(href)) value -= 12;
+        return value;
+    }
+    icons.sort(function(a, b) { return score(b) - score(a); });
+    if (icons.length) {
+        var fromLink = resolveAgainst(pageUrl, icons[0].getAttribute('href'));
+        if (fromLink) return fromLink;
+    }
+    var img = doc.querySelector('img.brand-logo, img[class*="logo" i], img[src*="logo" i]');
+    if (img) return resolveAgainst(pageUrl, img.getAttribute('src'));
+    return '';
+}
+
+function logoProbeUrls(pageUrl) {
+    var names = ['Logo.png', 'logo.png', 'logo.svg', 'favicon.png', 'apple-touch-icon.png', 'favicon.ico'];
+    var urls = [];
+    try {
+        var parsed = new URL(pageUrl);
+        var parts = parsed.pathname.split('/').filter(Boolean);
+        if (parts.length && parts[parts.length - 1].indexOf('.') >= 0) parts.pop();
+        var depth;
+        for (depth = 0; depth <= 2 && parts.length - depth > 0; depth++) {
+            var dir = '/' + parts.slice(0, parts.length - depth).join('/') + '/';
+            names.forEach(function(name) { urls.push(parsed.origin + dir + name); });
+        }
+    } catch (e) {}
+    return urls;
+}
+
+function showFirstWorkingLogo(img, candidates) {
+    var seen = {};
+    var list = candidates.filter(function(src) {
+        if (!src || seen[src]) return false;
+        seen[src] = true;
+        return true;
+    });
+    var index = 0;
+    function next() {
+        if (index >= list.length) {
+            img.removeAttribute('src');
+            img.hidden = true;
+            return;
+        }
+        var src = list[index++];
+        img.onload = function() {
+            if (img.naturalWidth < 12) { next(); return; }
+            img.hidden = false;
+            scheduleMasonry();
+        };
+        img.onerror = function() { next(); };
+        img.hidden = true;
+        img.src = src;
+    }
+    next();
+}
+
+function gitwrapAppLogo(pageUrl) {
+    try {
+        var path = new URL(pageUrl).pathname.replace(/\/+$/, '');
+        if (path !== '/GitWrap') return '';
+    } catch (e) { return ''; }
+    var script = document.querySelector('script[src*="GitWrap.js"]');
+    if (!script || !script.src) return '';
+    try { return new URL('../Logo.png', script.src).href; }
+    catch (e) { return ''; }
+}
+
+function attachSiteLogo(img, pageUrl, explicitLogo) {
+    var explicit = explicitLogo ? (resolveAgainst(pageUrl, explicitLogo) || explicitLogo) : '';
+    var probes = logoProbeUrls(pageUrl);
+    var own = gitwrapAppLogo(pageUrl);
+    function reveal(discovered) {
+        showFirstWorkingLogo(img, [explicit, discovered].concat(probes, [own]));
+    }
+    if (!pageUrl) {
+        if (explicit) showFirstWorkingLogo(img, [explicit]);
+        return;
+    }
+    fetch(pageUrl, { mode: 'cors', credentials: 'omit' })
+        .then(function(res) { return res.ok ? res.text().then(function(html) { return { html: html, url: res.url || pageUrl }; }) : null; })
+        .then(function(page) {
+            reveal(page && page.html ? pickIconFromHtml(page.html, page.url) : '');
+        })
+        .catch(function() { reveal(''); });
+}
+
+function AddURL(Container, Item, RefreshMasonry) {
+    var req = new XMLHttpRequest();
+    req.onreadystatechange = function() {
+        if (this.readyState !== 4) return;
+        var parsed = this.status === 200 ? parseUrlShortcut(this.responseText) : { dest: '', logo: '' };
+        var card = document.createElement('div');
+        card.className = 'grid-item clickable col-lg-4 col-md-6 col-sm-12 animated fadeIn';
+        var panel = document.createElement('div');
+        panel.className = 'paletteColour1 gw-url-card';
+        var logo = document.createElement('img');
+        logo.className = 'gw-url-logo';
+        logo.alt = '';
+        logo.hidden = true;
+        var title = document.createElement('h1');
+        var titleText = document.createElement('span');
+        titleText.textContent = Item.Title || '';
+        title.appendChild(logo);
+        title.appendChild(titleText);
+        var sub = document.createElement('small');
+        sub.textContent = Item.Subtitle || '';
+        panel.appendChild(title);
+        panel.appendChild(sub);
+        if (parsed.dest) {
+            panel.addEventListener('click', function() { window.location = parsed.dest; });
+        }
+        card.appendChild(panel);
+        Container.appendChild(card);
+        if (parsed.dest) attachSiteLogo(logo, parsed.dest, parsed.logo);
+        CheckItemCountAndRefreshMasonry();
+    };
+    req.open('GET', Item.URL, true);
+    req.send();
 }
 
 function AddFolder(Container, Item, RefreshMasonry) {
@@ -687,7 +884,7 @@ function openStoredUrl(item) {
     req.onload = function() {
         var dest = '';
         if (req.status === 200) {
-            dest = String(req.responseText || '').replace(/URL:/ig, '').trim();
+            dest = parseUrlShortcut(req.responseText).dest;
         }
         if (dest) window.location = dest;
     };
@@ -753,6 +950,7 @@ function closeSiblingMenus(li) {
 function placeSubmenu(li, submenu, isRoot) {
     submenu.classList.remove('gw-submenu-right');
     if (isRoot) return;
+    if (window.matchMedia('(max-width: 991px)').matches) return;
     var rect = li.getBoundingClientRect();
     if (rect.left < 260) submenu.classList.add('gw-submenu-right');
 }
@@ -776,7 +974,7 @@ function createMenu(node, parentPath = '', isRoot = true) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = isRoot
-            ? 'nav-link btn btn-link px-3 py-2 text-dark gw-menu-label'
+            ? 'nav-link btn btn-link px-3 py-2 gw-menu-label'
             : 'gw-menu-label';
         btn.textContent = label;
         btn.onclick = (e) => {
@@ -975,18 +1173,43 @@ function getThemeValue(map, key, fallback) {
  * @param {Object} theme - Theme object with bg_gradient, corner_radius, palette_gradient keys.
  */
 function ApplyTheme(theme) {
-    // Background gradient
     const bg = getThemeValue(SITE_BG_GRADIENTS, theme.bg_gradient, SITE_BG_GRADIENTS.mist);
-    document.body.style.background = bg;
-    // Corner rounding only for .paletteColour1
+    // Paint on the root, fixed to the viewport, so a short page does not
+    // end the gradient early and leave a flat colour underneath.
+    document.documentElement.style.background = bg;
+    document.documentElement.style.backgroundAttachment = 'fixed';
+    document.body.style.background = 'transparent';
     const radius = getThemeValue(CORNER_RADII, theme.corner_radius, CORNER_RADII.none);
-    // Palette card gradient
-    const paletteBg = getThemeValue(ITEM_BG_GRADIENTS, theme.palette_gradient, ITEM_BG_GRADIENTS.blue);
-    // Apply to all .paletteColour1 divs
+    const paletteBg = getThemeValue(ITEM_BG_GRADIENTS, theme.palette_gradient, ITEM_BG_GRADIENTS.ink);
+    const surface = theme.surface || 'line';
+    const accent = theme.accent || 'ink';
+    document.body.classList.remove(
+        'gw-surface-plain', 'gw-surface-line', 'gw-surface-lift',
+        'gw-accent-ink', 'gw-accent-slate', 'gw-accent-teal', 'gw-accent-blue',
+        'gw-panel-clear'
+    );
+    document.body.classList.add('gw-surface-' + surface, 'gw-accent-' + accent);
+    const contentFont = TEXT_FONTS[theme.content_font] || TEXT_FONTS.sourcesans;
+    const tileFont = TEXT_FONTS[theme.tile_font] || TEXT_FONTS.outfit;
+    const textColour = getThemeValue(TEXT_COLOURS, theme.text_colour, TEXT_COLOURS.ink);
+    const titleColour = getThemeValue(TEXT_COLOURS, theme.title_colour, TEXT_COLOURS.ink);
+    const panel = theme.panel || 'white';
+    const panelColour = getThemeValue(PANEL_COLOURS, panel, PANEL_COLOURS.white);
+    const tileText = LIGHT_TILES[theme.palette_gradient] ? TEXT_COLOURS.ink : '#ffffff';
+    document.documentElement.style.setProperty('--gw-content-font', contentFont);
+    document.documentElement.style.setProperty('--gw-tile-font', tileFont);
+    document.documentElement.style.setProperty('--gw-text', textColour);
+    document.documentElement.style.setProperty('--gw-title', titleColour);
+    document.documentElement.style.setProperty('--gw-panel', panelColour);
+    document.documentElement.style.setProperty('--gw-tile-bg', paletteBg);
+    document.documentElement.style.setProperty('--gw-tile-text', tileText);
+    document.body.classList.toggle('gw-panel-clear', panel === 'clear');
+    document.body.classList.toggle('gw-tile-light', !!LIGHT_TILES[theme.palette_gradient]);
     setTimeout(() => {
         document.querySelectorAll('.paletteColour1').forEach(div => {
             div.style.borderRadius = radius;
             div.style.background = paletteBg;
+            div.style.color = tileText;
         });
     }, 200);
 }
@@ -996,7 +1219,10 @@ function LoadFromParams() {
     console.log('URL Params');
     console.log(res);
     if ('Repo' in res && res.Repo != '') {
+        document.body.classList.remove('gw-builder');
         document.getElementById('loadBox').style.display = "none";
+        var intro = document.getElementById('generatorIntro');
+        if (intro) intro.style.display = "none";
         folder_target = 'NAV';
         if ('LM' in res) {
             folder_target = res.LM;
@@ -1011,7 +1237,7 @@ function LoadFromParams() {
         CurrentTheme = res['Theme'];
         ApplyTheme(CurrentTheme);
     } else { //Showing the site generator
-        document.getElementById('content').style.display = "none";
+        document.getElementById('siteSheet').style.display = "none";
     }
 }
 
